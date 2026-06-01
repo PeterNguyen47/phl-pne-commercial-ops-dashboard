@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.tools/
+artifacts/
+.vite/
+*.local
+*.log
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+showcase-repo-upload.zip
