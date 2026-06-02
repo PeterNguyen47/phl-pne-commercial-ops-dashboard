@@ -779,7 +779,7 @@ h2 {
   color: var(--muted);
 }
 
-.role-list,
+.capability-list,
 .insight-list,
 .adoption-list,
 .roadmap-list {
@@ -787,7 +787,7 @@ h2 {
   gap: 10px;
 }
 
-.role-row,
+.capability-row,
 .insight-row,
 .adoption-row,
 .roadmap-row {
@@ -801,7 +801,7 @@ h2 {
   background: #fbfcfe;
 }
 
-.role-row {
+.capability-row {
   grid-template-columns: minmax(0, 1fr) minmax(170px, auto);
 }
 
@@ -814,7 +814,7 @@ h2 {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.role-row p,
+.capability-row p,
 .insight-row p,
 .adoption-row p,
 .roadmap-row p,
@@ -825,14 +825,14 @@ h2 {
   color: var(--muted);
 }
 
-.role-module {
+.capability-module {
   display: grid;
   justify-items: end;
   gap: 8px;
   text-align: right;
 }
 
-.role-module strong {
+.capability-module strong {
   color: #1f344f;
 }
 
@@ -975,7 +975,7 @@ h2 {
   .alert-row,
   .decision-row,
   .staff-row,
-  .role-row,
+  .capability-row,
   .insight-row,
   .adoption-row,
   .roadmap-row {
@@ -988,13 +988,13 @@ h2 {
   .staff-row .status-pill,
   .adoption-row .status-pill,
   .roadmap-row .status-pill,
-  .role-module {
+  .capability-module {
     grid-column: 2;
     justify-self: start;
     text-align: left;
   }
 
-  .role-module {
+  .capability-module {
     justify-items: start;
   }
 

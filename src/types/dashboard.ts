@@ -30,7 +30,7 @@ export interface SourceReference {
 export interface AirportProfile {
   code: AirportOnlyCode;
   name: string;
-  role: string;
+  portfolioFunction: string;
   focus: string;
   publicFacts: string[];
   source: SourceKind;
@@ -79,7 +79,7 @@ export interface DataAsset {
   refreshCadence: string;
   qualityStatus: StatusKind;
   accessStatus: string;
-  roleUseCase: string;
+  commercialUseCase: string;
   source: SourceKind;
 }
 

@@ -1,8 +1,8 @@
 # PHL + PNE Commercial Data Management & Analysis Dashboard
 
-Prototype v1 of a recruiter-facing Commercial Data Management & Analysis dashboard for the Philadelphia Department of Aviation portfolio: Philadelphia International Airport (PHL) and Northeast Philadelphia Airport (PNE).
+Prototype v1 of a Commercial Data Management & Analysis dashboard for the Philadelphia Department of Aviation portfolio: Philadelphia International Airport (PHL) and Northeast Philadelphia Airport (PNE).
 
-The dashboard is designed as a job-preparation and showcase artifact for the Director, Commercial Data Management & Analysis role. It uses public airport, aviation, and City sources as the evidence base, then clearly marks any non-public operating details as illustrative models of what the Director would request, govern, and operationalize after joining.
+The dashboard uses public airport, aviation, and City sources as the evidence base, then clearly marks any non-public operating details as illustrative models of the internal commercial data that would need to be requested, governed, and operationalized.
 
 ## Prototype Screenshots
 
@@ -20,32 +20,30 @@ The dashboard is designed as a job-preparation and showcase artifact for the Dir
 
 ## What The Dashboard Is
 
-This is a Vite, React, and TypeScript prototype that translates the posted Director role into an executive BI experience. It is not a production airport system and does not claim access to private airport feeds. The first screen answers: how would this Director organize Commercial Division data into useful BI for PHL and PNE?
+This is a Vite, React, and TypeScript prototype that translates Commercial Division data duties into an executive BI experience. It is not a production airport system and does not claim access to private airport feeds. The first screen answers: how can Commercial Division data be organized into useful BI for PHL and PNE?
 
-The dashboard includes four role-aligned views:
+The dashboard includes four duty-aligned views:
 
-- **Commercial BI Cockpit**: portfolio KPIs, role-alignment map, data maturity trend, public-source insights, and a Director decision worklist.
+- **Commercial BI Cockpit**: portfolio KPIs, capability-alignment map, data maturity trend, public-source insights, and a commercial decision worklist.
 - **Revenue Verticals**: parking, ground transportation, concessions, advertising, cargo, gates, airline schedules, PNE hangars, and development-agreement opportunity views.
 - **Lease & Agreement Governance**: agreement completeness, modeled value, compliance flags, renewal/action needs, and a standardized agreement register model.
 - **Data Strategy Roadmap**: source inventory, data-readiness model, Commercial staff adoption, IT/data partnership needs, AI-assisted analysis guardrails, and first-90-days execution plan.
 
 ## Data Used
 
-Prototype v1 is public-first. Public sources establish the role context and airport operating context. Illustrative model data is used only where the job posting implies internal systems that are not publicly exposed, such as lease completeness, feed readiness, staff adoption, and internal revenue-system visibility.
+Prototype v1 is public-first. Public sources establish the airport operating context and commercial portfolio context. Illustrative model data is used only where public information cannot expose internal systems, such as lease completeness, feed readiness, staff adoption, and internal revenue-system visibility.
 
 | Data category | Used for | Provenance |
 | --- | --- | --- |
-| Director job posting | Role responsibilities, portfolio scope, BI/data-governance mandate, staff training, IT partnership, and AI exploration | Public Source |
 | PHL annual reports, statistical information, and airport pages | Airport context, passenger/activity framing, and commercial portfolio narrative | Public Source |
 | PNE public airport profile | Reliever-airport context, general aviation framing, tenant/hangar/ground-lease lens | Public Source |
 | City open contract data | Public procurement and agreement-discovery starting point | Public Source |
 | FAA passenger/cargo data and BTS on-time data | Passenger, cargo, schedule, reliability, and aviation-activity context | Public Source |
-| Revenue vertical visibility, agreement completeness, internal feed readiness, and BI adoption | Candidate model of what the Director would request and govern internally | Illustrative Model |
+| Revenue vertical visibility, agreement completeness, internal feed readiness, and BI adoption | Illustrative model of internal commercial data to request and govern | Illustrative Model |
 | Public observations converted into business questions and recommendations | Inference layer connecting public evidence to strategic action | Derived From Public |
 
 Public anchors are linked in the app footer:
 
-- [Director job posting](https://jobs.smartrecruiters.com/CityofPhiladelphia/744000124935537--director-commercial-data-management-analysis-department-of-aviation-)
 - [PHL Annual Reports](https://www.phl.org/business/reports/annual-report)
 - [PHL Statistical Information](https://www.phl.org/business/investor-information/statistical-information)
 - [PHL + PNE About Us](https://www.phl.org/about/about-us)
@@ -56,7 +54,7 @@ Public anchors are linked in the app footer:
 
 ## Strategic Story
 
-The story of the dashboard is that the Commercial Director role is not simply about producing charts. It is about building a repeatable BI operating model for Commercial leadership.
+The story of the dashboard is that Commercial data management is not simply about producing charts. It is about building a repeatable BI operating model for Commercial leadership.
 
 Prototype v1 surfaces that story in a few ways:
 
@@ -64,9 +62,9 @@ Prototype v1 surfaces that story in a few ways:
 - **Commercial revenue becomes a portfolio**: parking, ground transportation, concessions, advertising, cargo, gates, airline schedules, PNE hangars, ground leases, and development agreements are shown as distinct verticals with different data needs.
 - **Lease and agreement hygiene becomes executive work**: agreement records are modeled around tenant/vendor, value, expiration, completeness, compliance flags, and recommended action.
 - **PNE receives its own commercial asset lens**: PNE is framed around general aviation, hangars, ground leases, development agreements, and tenant portfolio visibility.
-- **Dashboard adoption is part of the job**: the roadmap includes staff training, IT partnership, source ownership, refresh cadence, and AI-assisted analysis guardrails.
+- **Dashboard adoption is part of the operating model**: the roadmap includes staff training, IT partnership, source ownership, refresh cadence, and AI-assisted analysis guardrails.
 
-The intended recruiter-facing question is: can this candidate use public information to understand the role, structure the Commercial Division data problem, and propose a practical BI roadmap?
+The intended executive question is: can public information structure the Commercial Division data problem and support a practical BI roadmap?
 
 ## How It Was Built
 
@@ -78,8 +76,8 @@ The intended recruiter-facing question is: can this candidate use public informa
 
 Core files:
 
-- `src/App.tsx`: dashboard layout, filtering, charts, and role-aligned view composition.
-- `src/data/dashboardData.ts`: typed public-first prototype data, role alignment, commercial verticals, agreement records, insights, and roadmap items.
+- `src/App.tsx`: dashboard layout, filtering, charts, and duty-aligned view composition.
+- `src/data/dashboardData.ts`: typed public-first prototype data, capability alignment, commercial verticals, agreement records, insights, and roadmap items.
 - `src/types/dashboard.ts`: shared TypeScript interfaces for commercial BI, agreements, data assets, and roadmap items.
 - `src/styles.css`: responsive dashboard styling.
 
@@ -108,14 +106,31 @@ This is prototype v1. It is not a production BI deployment and does not connect 
 
 ## Changelog
 
-### v1 - Role-aligned Commercial Data Management showcase
+### v1.1 - Public portfolio framing cleanup
 
 Added:
 
-- Role-specific dashboard framing for the Director, Commercial Data Management & Analysis posting.
+- Changelog entry documenting the public portfolio framing cleanup.
+
+Changed:
+
+- Reframed README and dashboard language around Commercial Division duties, portfolio management, data governance, and BI operating model.
+- Renamed visible alignment copy to capability alignment.
+- Kept the same commercial analytics scope while removing external-position framing.
+
+Removed:
+
+- Hiring-context language from README and app copy.
+- External position link from the public evidence library.
+
+### v1 - Commercial Data Management BI prototype
+
+Added:
+
+- Commercial Data Management & Analysis dashboard framing.
 - New views for Commercial BI Cockpit, Revenue Verticals, Lease & Agreement Governance, and Data Strategy Roadmap.
 - Public-first provenance labels: `Public Source`, `Illustrative Model`, and `Derived From Public`.
-- Role-alignment panel mapping dashboard modules to posted job responsibilities.
+- Capability-alignment panel mapping dashboard modules to Commercial Division data duties.
 - Public information story cards connecting public observations to internal data requests and executive recommendations.
 - Commercial vertical model covering parking, ground transportation, concessions, advertising, property development, leases, cargo, gates, airline schedules, aviation activity, and PNE assets.
 - Agreement governance model with completeness, compliance flags, value, expiration, and recommended action.
@@ -123,7 +138,7 @@ Added:
 
 Changed:
 
-- Repositioned the app from an airport operations control-room dashboard to a recruiter-facing Commercial Division BI showcase.
+- Repositioned the app from an airport operations control-room dashboard to a Commercial Division BI prototype.
 - Shifted KPIs away from ground-ops SLA and toward data readiness, commercial portfolio scope, agreement completeness, public-source confidence, revenue opportunity, and BI adoption.
 - Reframed PHL/PNE filters around commercial strategy rather than daily operational exceptions.
 - Updated README story, data model explanation, and strategic insights.
@@ -138,7 +153,7 @@ Removed:
 
 - Initial Vite + React + TypeScript dashboard for PHL/PNE commercial operations.
 - Included executive cockpit, ground operations, parking/commercial, and contract/action views.
-- Added local fixtures, public source links, screenshots, and GitHub showcase README.
+- Added local fixtures, public source links, screenshots, and GitHub README.
 
 ## Recommended Next Steps
 
@@ -146,4 +161,4 @@ Removed:
 - Connect parking, concessions, ground transportation, cargo, gate, schedule, and PNE asset feeds.
 - Add a source-quality scoring workflow with accountable data owners.
 - Add portfolio drilldowns for PHL and PNE leadership audiences.
-- Add role-specific interview prep notes or a companion deck that explains the dashboard story.
+- Add a companion executive briefing deck that explains the dashboard story.

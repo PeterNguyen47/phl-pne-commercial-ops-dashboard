@@ -50,7 +50,7 @@ import {
   executiveKpis,
   insightItems,
   roadmapItems,
-  roleAlignment,
+  capabilityAlignment,
   severityRank,
   sourceReferences,
   trendData,
@@ -237,7 +237,7 @@ function App() {
             <Plane size={22} />
           </div>
           <div>
-            <p className="eyebrow">Philadelphia Department of Aviation role showcase</p>
+            <p className="eyebrow">Philadelphia Department of Aviation commercial analytics</p>
             <h1>Commercial Data Management & Analysis Dashboard</h1>
             <p className="hero-copy">
               Public-first BI prototype for organizing Commercial Division data across PHL and PNE.
@@ -283,7 +283,7 @@ function App() {
                 <span className="airport-code">{profile.code}</span>
                 <div>
                   <h2>{profile.name}</h2>
-                  <p>{profile.role}</p>
+                  <p>{profile.portfolioFunction}</p>
                 </div>
               </div>
               <p className="profile-focus">{profile.focus}</p>
@@ -344,7 +344,7 @@ function App() {
       <footer className="source-library">
         <div>
           <p className="eyebrow">Public Evidence Library</p>
-          <h2>Sources connected to role-relevant BI questions</h2>
+          <h2>Sources connected to commercial BI questions</h2>
         </div>
         <div className="source-links">
           {sourceReferences.map((source) => (
@@ -493,15 +493,15 @@ function CommercialBiCockpit({
         </article>
 
         <article className="panel">
-          <PanelHeading icon={Target} title="Role Alignment" meta="Dashboard modules mapped to the posted Director mandate" />
-          <div className="role-list">
-            {roleAlignment.map((item) => (
-              <div className="role-row" key={item.responsibility}>
+          <PanelHeading icon={Target} title="Capability Alignment" meta="Dashboard modules mapped to Commercial Division data duties" />
+          <div className="capability-list">
+            {capabilityAlignment.map((item) => (
+              <div className="capability-row" key={item.responsibility}>
                 <div>
                   <div className="row-title">{item.responsibility}</div>
                   <p>{item.proofPoint}</p>
                 </div>
-                <div className="role-module">
+                <div className="capability-module">
                   <strong>{item.dashboardModule}</strong>
                   <SourceBadge source={item.source} />
                 </div>
@@ -517,7 +517,7 @@ function CommercialBiCockpit({
       </section>
 
       <section className="panel">
-        <PanelHeading icon={ListChecks} title="Director Decision Worklist" meta={`${decisions.length} scoped actions`} />
+        <PanelHeading icon={ListChecks} title="Commercial Decision Worklist" meta={`${decisions.length} scoped actions`} />
         <DecisionRows decisions={decisions} />
       </section>
     </div>
@@ -694,7 +694,7 @@ function AgreementGovernance({
       </section>
 
       <section className="panel">
-        <PanelHeading icon={Briefcase} title="Agreement Register Model" meta="Illustrative fields the Director would standardize" />
+        <PanelHeading icon={Briefcase} title="Agreement Register Model" meta="Illustrative fields Commercial analytics would standardize" />
         <div className="agreement-table" role="table" aria-label="Agreement register model">
           <div className="agreement-header" role="row">
             <span>Agreement</span>
@@ -790,7 +790,7 @@ function DataStrategyRoadmap({
               <StatusPill status={asset.qualityStatus} />
             </div>
             <h2>{asset.sourceName}</h2>
-            <p>{asset.roleUseCase}</p>
+            <p>{asset.commercialUseCase}</p>
             <dl>
               <div>
                 <dt>Owner</dt>
@@ -832,7 +832,7 @@ function DataStrategyRoadmap({
 function DomainRiskPanel({ risks }: { risks: DomainRisk[] }) {
   return (
     <article className="panel">
-      <PanelHeading icon={Target} title="Role Risk Map" meta="Lowest score receives attention first" />
+        <PanelHeading icon={Target} title="Capability Risk Map" meta="Lowest score receives attention first" />
       <div className="risk-list">
         {risks.map((risk) => (
           <div className="risk-row" key={`${risk.airport}-${risk.domain}`}>
