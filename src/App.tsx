@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Activity,
   AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
@@ -8,7 +7,6 @@ import {
   Briefcase,
   Building2,
   CalendarDays,
-  Car,
   CheckCircle2,
   Clock3,
   ExternalLink,
@@ -18,9 +16,7 @@ import {
   Gauge,
   Landmark,
   ListChecks,
-  MapPin,
   Plane,
-  Radar,
   ShieldAlert,
   Target,
   TrendingUp,
@@ -34,47 +30,48 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   ComposedChart,
   Legend,
   Line,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import {
+  adoptionItems,
+  agreementRecords,
   airportMatches,
   airportProfiles,
-  contractMetrics,
+  commercialVerticals,
+  dataAssets,
   decisionItems,
-  delayContributors,
   domainRisks,
   executiveKpis,
-  operationalEvents,
-  parkingLots,
-  procurementStages,
+  insightItems,
+  roadmapItems,
+  roleAlignment,
   severityRank,
   sourceReferences,
-  staffingMetrics,
   trendData,
 } from "./data/dashboardData";
 import type {
+  AgreementRecord,
   AirportCode,
-  ContractMetric,
+  CommercialVerticalMetric,
+  DataAsset,
   DecisionItem,
   DomainRisk,
+  InsightItem,
   KpiMetric,
-  OperationalEvent,
-  ParkingLotMetric,
   PeriodKey,
+  RoadmapItem,
   SourceKind,
   StatusKind,
+  TrainingOrAdoptionItem,
 } from "./types/dashboard";
 
-type ViewKey = "cockpit" | "ground" | "parking" | "contracts";
+type ViewKey = "cockpit" | "revenue" | "agreements" | "roadmap";
 type SeverityFilter = "all" | StatusKind;
 
 const airportOptions: Array<{ label: string; value: AirportCode; icon: LucideIcon }> = [
@@ -91,19 +88,19 @@ const periodOptions: Array<{ label: string; value: PeriodKey }> = [
 
 const severityOptions: Array<{ label: string; value: SeverityFilter; icon: LucideIcon }> = [
   { label: "All", value: "all", icon: Filter },
-  { label: "Critical", value: "critical", icon: ShieldAlert },
+  { label: "Action", value: "critical", icon: ShieldAlert },
   { label: "Watch", value: "warning", icon: AlertTriangle },
 ];
 
 const viewTabs: Array<{ label: string; value: ViewKey; icon: LucideIcon }> = [
-  { label: "Executive Cockpit", value: "cockpit", icon: Gauge },
-  { label: "Ground Operations", value: "ground", icon: Radar },
-  { label: "Parking & Commercial", value: "parking", icon: Car },
-  { label: "Contracts & Actions", value: "contracts", icon: Briefcase },
+  { label: "Commercial BI Cockpit", value: "cockpit", icon: Gauge },
+  { label: "Revenue Verticals", value: "revenue", icon: Landmark },
+  { label: "Lease & Agreement Governance", value: "agreements", icon: Briefcase },
+  { label: "Data Strategy Roadmap", value: "roadmap", icon: Wrench },
 ];
 
 const statusText: Record<StatusKind, string> = {
-  normal: "On track",
+  normal: "Ready",
   warning: "Watch",
   critical: "Action",
 };
@@ -167,59 +164,28 @@ function filterByAirport<T extends { airport: AirportCode }>(items: T[], selecte
   return items.filter((item) => airportMatches(item.airport, selectedAirport));
 }
 
-function filterEvents(items: OperationalEvent[], selectedAirport: AirportCode, severity: SeverityFilter) {
-  return items
-    .filter((item) => selectedAirport === "ALL" || item.airport === selectedAirport)
-    .filter((item) => severity === "all" || item.severity === severity)
-    .sort((a, b) => severityRank[a.severity] - severityRank[b.severity]);
-}
+function filterBySeverity<T>(items: T[], severity: SeverityFilter, getStatus: (item: T) => StatusKind) {
+  if (severity === "all") {
+    return items;
+  }
 
-function filterParking(items: ParkingLotMetric[], selectedAirport: AirportCode) {
-  return items.filter((item) => selectedAirport === "ALL" || item.airport === selectedAirport);
-}
-
-function filterDecisions(items: DecisionItem[], selectedAirport: AirportCode, severity: SeverityFilter) {
-  return filterByAirport(items, selectedAirport)
-    .filter((item) => severity === "all" || item.severity === severity)
-    .sort((a, b) => severityRank[a.severity] - severityRank[b.severity]);
-}
-
-function filterContracts(items: ContractMetric[], selectedAirport: AirportCode, severity: SeverityFilter) {
-  return filterByAirport(items, selectedAirport)
-    .filter((item) => severity === "all" || item.status === severity)
-    .sort((a, b) => severityRank[a.status] - severityRank[b.status]);
+  return items.filter((item) => getStatus(item) === severity);
 }
 
 function getChartData(period: PeriodKey, selectedAirport: AirportCode) {
   return trendData[period].map((point) => {
-    const commercialRevenue =
+    const opportunity =
       selectedAirport === "PHL"
-        ? point.phlRevenue
+        ? point.phlOpportunity
         : selectedAirport === "PNE"
-          ? point.pneRevenue
-          : point.phlRevenue + point.pneRevenue;
-    const revenueAtRisk =
-      selectedAirport === "PHL"
-        ? Math.round(point.revenueAtRisk * 0.86)
-        : selectedAirport === "PNE"
-          ? Math.round(point.revenueAtRisk * 0.14)
-          : point.revenueAtRisk;
+          ? point.pneOpportunity
+          : point.phlOpportunity + point.pneOpportunity;
 
     return {
       ...point,
-      commercialRevenue,
-      revenueAtRisk,
+      opportunity,
     };
   });
-}
-
-function getParkingSummary(lots: ParkingLotMetric[]) {
-  const capacity = lots.reduce((sum, lot) => sum + lot.capacity, 0);
-  const occupied = lots.reduce((sum, lot) => sum + lot.occupied, 0);
-  const revenue = lots.reduce((sum, lot) => sum + lot.revenue, 0);
-  const utilization = capacity === 0 ? 0 : Math.round((occupied / capacity) * 100);
-
-  return { capacity, occupied, revenue, utilization };
 }
 
 function App() {
@@ -237,27 +203,31 @@ function App() {
     () => filterByAirport(domainRisks, selectedAirport).sort((a, b) => a.score - b.score),
     [selectedAirport],
   );
-  const scopedEvents = useMemo(
-    () => filterEvents(operationalEvents, selectedAirport, severityFilter),
+  const scopedVerticals = useMemo(
+    () => filterBySeverity(filterByAirport(commercialVerticals, selectedAirport), severityFilter, (item) => item.status),
     [selectedAirport, severityFilter],
   );
-  const scopedParking = useMemo(
+  const scopedAgreements = useMemo(
     () =>
-      filterParking(parkingLots, selectedAirport).filter(
-        (lot) => severityFilter === "all" || lot.forecast === severityFilter,
-      ),
+      filterBySeverity(filterByAirport(agreementRecords, selectedAirport), severityFilter, (item) => item.complianceFlag),
     [selectedAirport, severityFilter],
   );
-  const scopedContracts = useMemo(
-    () => filterContracts(contractMetrics, selectedAirport, severityFilter),
+  const scopedAssets = useMemo(
+    () => filterBySeverity(filterByAirport(dataAssets, selectedAirport), severityFilter, (item) => item.qualityStatus),
+    [selectedAirport, severityFilter],
+  );
+  const scopedInsights = useMemo(
+    () => filterBySeverity(filterByAirport(insightItems, selectedAirport), severityFilter, (item) => item.status),
     [selectedAirport, severityFilter],
   );
   const scopedDecisions = useMemo(
-    () => filterDecisions(decisionItems, selectedAirport, severityFilter),
+    () =>
+      filterBySeverity(filterByAirport(decisionItems, selectedAirport), severityFilter, (item) => item.severity).sort(
+        (a, b) => severityRank[a.severity] - severityRank[b.severity],
+      ),
     [selectedAirport, severityFilter],
   );
   const chartData = useMemo(() => getChartData(selectedPeriod, selectedAirport), [selectedAirport, selectedPeriod]);
-  const parkingSummary = useMemo(() => getParkingSummary(scopedParking), [scopedParking]);
 
   return (
     <div className="app-shell">
@@ -267,8 +237,11 @@ function App() {
             <Plane size={22} />
           </div>
           <div>
-            <p className="eyebrow">Philadelphia Department of Aviation</p>
-            <h1>Commercial Operations Executive Dashboard</h1>
+            <p className="eyebrow">Philadelphia Department of Aviation role showcase</p>
+            <h1>Commercial Data Management & Analysis Dashboard</h1>
+            <p className="hero-copy">
+              Public-first BI prototype for organizing Commercial Division data across PHL and PNE.
+            </p>
           </div>
         </div>
 
@@ -293,7 +266,7 @@ function App() {
             ))}
           </div>
           <SegmentedControl
-            label="Severity"
+            label="Status"
             options={severityOptions}
             value={severityFilter}
             onChange={setSeverityFilter}
@@ -343,46 +316,39 @@ function App() {
 
       <main>
         {selectedView === "cockpit" && (
-          <ExecutiveCockpit
+          <CommercialBiCockpit
             kpis={scopedKpis}
             risks={scopedRisks}
-            events={scopedEvents}
+            insights={scopedInsights}
             decisions={scopedDecisions}
             chartData={chartData}
-            parkingSummary={parkingSummary}
             isCompact={isCompact}
           />
         )}
-        {selectedView === "ground" && (
-          <GroundOperations
-            selectedAirport={selectedAirport}
-            events={scopedEvents}
+        {selectedView === "revenue" && (
+          <RevenueVerticals
+            verticals={scopedVerticals}
+            insights={scopedInsights}
             chartData={chartData}
-            severityFilter={severityFilter}
             isCompact={isCompact}
           />
         )}
-        {selectedView === "parking" && (
-          <ParkingCommercial
-            lots={scopedParking}
-            chartData={chartData}
-            decisions={scopedDecisions}
-            isCompact={isCompact}
-          />
+        {selectedView === "agreements" && (
+          <AgreementGovernance agreements={scopedAgreements} decisions={scopedDecisions} isCompact={isCompact} />
         )}
-        {selectedView === "contracts" && (
-          <ContractsActions contracts={scopedContracts} decisions={scopedDecisions} isCompact={isCompact} />
+        {selectedView === "roadmap" && (
+          <DataStrategyRoadmap assets={scopedAssets} decisions={scopedDecisions} isCompact={isCompact} />
         )}
       </main>
 
       <footer className="source-library">
         <div>
-          <p className="eyebrow">Data Provenance</p>
-          <h2>Public anchors and sample internal operating data</h2>
+          <p className="eyebrow">Public Evidence Library</p>
+          <h2>Sources connected to role-relevant BI questions</h2>
         </div>
         <div className="source-links">
           {sourceReferences.map((source) => (
-            <a key={source.url} href={source.url} target="_blank" rel="noreferrer">
+            <a key={source.url} href={source.url} target="_blank" rel="noreferrer" title={source.useCase}>
               <FileText aria-hidden="true" size={15} />
               {source.label}
               <ExternalLink aria-hidden="true" size={13} />
@@ -444,21 +410,25 @@ function SegmentedControl<T extends string>({
   );
 }
 
-function ExecutiveCockpit({
+function CommercialBiCockpit({
   kpis,
   risks,
-  events,
+  insights,
   decisions,
   chartData,
-  parkingSummary,
   isCompact,
 }: {
   kpis: KpiMetric[];
   risks: DomainRisk[];
-  events: OperationalEvent[];
+  insights: InsightItem[];
   decisions: DecisionItem[];
-  chartData: Array<{ label: string; commercialRevenue: number; revenueAtRisk: number; groundSla: number; contractRisk: number }>;
-  parkingSummary: { capacity: number; occupied: number; revenue: number; utilization: number };
+  chartData: Array<{
+    label: string;
+    opportunity: number;
+    dataReadiness: number;
+    agreementCompleteness: number;
+    adoption: number;
+  }>;
   isCompact: boolean;
 }) {
   return (
@@ -482,8 +452,8 @@ function ExecutiveCockpit({
         <article className="panel">
           <PanelHeading
             icon={TrendingUp}
-            title="Commercial Exposure"
-            meta={`${formatCurrency(parkingSummary.revenue)} scoped parking and aviation asset revenue`}
+            title="BI Maturity Path"
+            meta="Modeled opportunity decreases as data readiness, agreement completeness, and adoption improve"
           />
           <div className="chart-frame tall">
             <ResponsiveContainer width="100%" height="100%">
@@ -495,41 +465,46 @@ function ExecutiveCockpit({
                   axisLine={false}
                   interval={isCompact ? 1 : 0}
                   tickMargin={8}
-                  height={32}
+                  height={40}
                 />
-                <YAxis tickLine={false} axisLine={false} width={36} />
-                <Tooltip formatter={(value: number) => `$${value}K`} />
+                <YAxis yAxisId="left" tickLine={false} axisLine={false} width={42} />
+                <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tickLine={false} axisLine={false} width={42} />
+                <Tooltip />
                 <Legend />
-                <Area
-                  type="monotone"
-                  dataKey="commercialRevenue"
-                  name="Commercial revenue"
-                  fill="#dce8f7"
-                  stroke="#275d92"
+                <Bar
+                  yAxisId="left"
+                  dataKey="opportunity"
+                  name="Modeled opportunity ($K)"
+                  fill="#b42318"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Line yAxisId="right" dataKey="dataReadiness" name="Data readiness" stroke="#275d92" strokeWidth={2} />
+                <Line
+                  yAxisId="right"
+                  dataKey="agreementCompleteness"
+                  name="Agreement completeness"
+                  stroke="#25805a"
                   strokeWidth={2}
                 />
-                <Bar dataKey="revenueAtRisk" name="Revenue at risk" fill="#b42318" radius={[4, 4, 0, 0]} />
+                <Line yAxisId="right" dataKey="adoption" name="BI adoption" stroke="#b76500" strokeWidth={2} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
         </article>
 
         <article className="panel">
-          <PanelHeading icon={Target} title="Domain Risk" meta="Lowest score receives executive attention first" />
-          <div className="risk-list">
-            {risks.map((risk) => (
-              <div className="risk-row" key={`${risk.airport}-${risk.domain}`}>
-                <div className="risk-score" style={{ color: statusColors[risk.status] }}>
-                  {risk.score}
-                </div>
+          <PanelHeading icon={Target} title="Role Alignment" meta="Dashboard modules mapped to the posted Director mandate" />
+          <div className="role-list">
+            {roleAlignment.map((item) => (
+              <div className="role-row" key={item.responsibility}>
                 <div>
-                  <div className="row-title">
-                    {risk.domain} <span>{risk.airport}</span>
-                  </div>
-                  <p>{risk.driver}</p>
-                  <strong>{risk.action}</strong>
+                  <div className="row-title">{item.responsibility}</div>
+                  <p>{item.proofPoint}</p>
                 </div>
-                <SourceBadge source={risk.source} />
+                <div className="role-module">
+                  <strong>{item.dashboardModule}</strong>
+                  <SourceBadge source={item.source} />
+                </div>
               </div>
             ))}
           </div>
@@ -537,376 +512,386 @@ function ExecutiveCockpit({
       </section>
 
       <section className="dashboard-grid equal">
-        <ExecutiveExceptions events={events} />
-        <DecisionWorklist decisions={decisions} />
+        <DomainRiskPanel risks={risks} />
+        <InsightPanel insights={insights} />
+      </section>
+
+      <section className="panel">
+        <PanelHeading icon={ListChecks} title="Director Decision Worklist" meta={`${decisions.length} scoped actions`} />
+        <DecisionRows decisions={decisions} />
       </section>
     </div>
   );
 }
 
-function GroundOperations({
-  selectedAirport,
-  events,
+function RevenueVerticals({
+  verticals,
+  insights,
   chartData,
-  severityFilter,
   isCompact,
 }: {
-  selectedAirport: AirportCode;
-  events: OperationalEvent[];
-  chartData: Array<{ label: string; groundSla: number }>;
-  severityFilter: SeverityFilter;
+  verticals: CommercialVerticalMetric[];
+  insights: InsightItem[];
+  chartData: Array<{ label: string; opportunity: number }>;
   isCompact: boolean;
 }) {
-  const scopedDelay = delayContributors.filter((item) => selectedAirport === "ALL" || item.airport === selectedAirport);
-  const scopedStaffing = staffingMetrics.filter((item) => selectedAirport === "ALL" || item.airport === selectedAirport);
-
-  return (
-    <div className="view-stack">
-      <section className="dashboard-grid equal">
-        <article className="panel">
-          <PanelHeading icon={Activity} title="Ground Ops SLA" meta="Turn, ramp, baggage, and airfield service performance" />
-          <div className="chart-frame">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 32, bottom: 16, left: 0 }}>
-                <CartesianGrid stroke="#e5e7eb" vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  tickLine={false}
-                  axisLine={false}
-                  interval={isCompact ? 1 : 0}
-                  tickMargin={8}
-                  height={32}
-                />
-                <YAxis domain={[80, 100]} tickLine={false} axisLine={false} width={36} />
-                <Tooltip formatter={(value: number) => `${value}%`} />
-                <Area
-                  type="monotone"
-                  dataKey="groundSla"
-                  name="SLA compliance"
-                  stroke="#25805a"
-                  fill="#d9eee5"
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </article>
-
-        <article className="panel">
-          <PanelHeading icon={Clock3} title="Delay Contributors" meta="Minutes and event count by operating driver" />
-          <div className="chart-frame">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={scopedDelay} layout="vertical" margin={{ top: 6, right: 24, bottom: 0, left: 58 }}>
-                <CartesianGrid stroke="#e5e7eb" horizontal={false} />
-                <XAxis type="number" tickLine={false} axisLine={false} />
-                <YAxis type="category" dataKey="label" width={130} tickLine={false} axisLine={false} />
-                <Tooltip />
-                <Bar dataKey="minutes" name="Minutes" fill="#275d92" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </article>
-      </section>
-
-      <section className="dashboard-grid two-one">
-        <article className="panel">
-          <PanelHeading icon={Users} title="Staffing Coverage" meta="Planned vs actual coverage by operating group" />
-          <div className="staffing-list">
-            {scopedStaffing.map((item) => {
-              const coverage = Math.round((item.actual / item.planned) * 100);
-              return (
-                <div className="staff-row" key={item.area}>
-                  <div>
-                    <div className="row-title">
-                      {item.area} <span>{item.airport}</span>
-                    </div>
-                    <p>
-                      {item.actual} of {item.planned} planned positions
-                    </p>
-                  </div>
-                  <div className="coverage">
-                    <span>{coverage}%</span>
-                    <div className="progress-track">
-                      <div className={item.status} style={{ width: `${coverage}%` }} />
-                    </div>
-                  </div>
-                  <StatusPill status={item.status} />
-                </div>
-              );
-            })}
-          </div>
-        </article>
-
-        <article className="panel">
-          <PanelHeading icon={AlertTriangle} title="Operational Alerts" meta={`${severityFilter === "all" ? "All" : statusText[severityFilter]} severity`} />
-          <AlertList events={events} />
-        </article>
-      </section>
-    </div>
-  );
-}
-
-function ParkingCommercial({
-  lots,
-  chartData,
-  decisions,
-  isCompact,
-}: {
-  lots: ParkingLotMetric[];
-  chartData: Array<{ label: string; commercialRevenue: number; revenueAtRisk: number }>;
-  decisions: DecisionItem[];
-  isCompact: boolean;
-}) {
-  const summary = getParkingSummary(lots);
-  const pieData = lots.map((lot) => ({
-    name: lot.lot,
-    value: lot.occupied,
-    status: lot.forecast,
-  }));
-  const commercialDecisions = decisions.filter((item) => item.domain === "Parking & Commercial");
-
   return (
     <div className="view-stack">
       <section className="summary-strip">
-        <SummaryTile icon={Car} label="Scoped capacity" value={summary.capacity.toLocaleString()} source="Sample Internal" />
-        <SummaryTile icon={Gauge} label="Utilization" value={`${summary.utilization}%`} source="Derived" />
-        <SummaryTile icon={Landmark} label="Revenue" value={formatCurrency(summary.revenue)} source="Sample Internal" />
-        <SummaryTile icon={AlertTriangle} label="Commercial decisions" value={String(commercialDecisions.length)} source="Derived" />
+        <SummaryTile
+          icon={Landmark}
+          label="Visible verticals"
+          value={String(verticals.length)}
+          source="Derived From Public"
+        />
+        <SummaryTile
+          icon={BarChart3}
+          label="Avg visibility"
+          value={`${Math.round(verticals.reduce((sum, item) => sum + item.currentVisibility, 0) / Math.max(verticals.length, 1))}%`}
+          source="Illustrative Model"
+        />
+        <SummaryTile
+          icon={AlertTriangle}
+          label="Action verticals"
+          value={String(verticals.filter((item) => item.status === "critical").length)}
+          source="Illustrative Model"
+        />
+        <SummaryTile icon={FileText} label="Public insights" value={String(insights.length)} source="Derived From Public" />
       </section>
 
       <section className="dashboard-grid equal">
         <article className="panel">
-          <PanelHeading icon={TrendingUp} title="Revenue Yield" meta="Scoped parking, hangar, apron, and aviation asset revenue" />
+          <PanelHeading icon={TrendingUp} title="Modeled Revenue Opportunity" meta="Public context plus internal-data request model" />
           <div className="chart-frame">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 10, right: 32, bottom: 16, left: 0 }}>
                 <CartesianGrid stroke="#e5e7eb" vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  tickLine={false}
-                  axisLine={false}
-                  interval={isCompact ? 1 : 0}
-                  tickMargin={8}
-                  height={32}
-                />
-                <YAxis tickLine={false} axisLine={false} width={36} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} interval={isCompact ? 1 : 0} height={40} />
+                <YAxis tickLine={false} axisLine={false} width={44} />
                 <Tooltip formatter={(value: number) => `$${value}K`} />
                 <Area
                   type="monotone"
-                  dataKey="commercialRevenue"
-                  name="Commercial revenue"
+                  dataKey="opportunity"
+                  name="Modeled opportunity"
                   stroke="#275d92"
                   fill="#dce8f7"
                   strokeWidth={2}
                 />
-                <Area
-                  type="monotone"
-                  dataKey="revenueAtRisk"
-                  name="Revenue at risk"
-                  stroke="#b42318"
-                  fill="#f4d6d2"
-                  strokeWidth={2}
-                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </article>
 
-        <article className="panel">
-          <PanelHeading icon={BarChart3} title="Occupancy Mix" meta="Occupied inventory by product" />
-          <div className="chart-frame">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={58} outerRadius={96} paddingAngle={2}>
-                  {pieData.map((entry) => (
-                    <Cell key={entry.name} fill={statusColors[entry.status]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </article>
+        <InsightPanel insights={insights} />
       </section>
 
-      <section className="lot-grid">
-        {lots.map((lot) => {
-          const utilization = Math.round((lot.occupied / lot.capacity) * 100);
-          return (
-            <article className={`lot-card ${lot.forecast}`} key={lot.id}>
-              <div className="metric-topline">
-                <span className="airport-code small">{lot.airport}</span>
-                <StatusPill status={lot.forecast} />
+      <section className="vertical-grid">
+        {verticals.map((vertical) => (
+          <article className={`vertical-card ${vertical.status}`} key={vertical.id}>
+            <div className="metric-topline">
+              <span className="airport-code small">{vertical.airport}</span>
+              <StatusPill status={vertical.status} />
+            </div>
+            <h2>{vertical.vertical}</h2>
+            <p>{vertical.publicSignal}</p>
+            <div className="lot-stat">
+              <strong>{vertical.currentVisibility}%</strong>
+              <span>visibility</span>
+            </div>
+            <div className="progress-track">
+              <div className={vertical.status} style={{ width: `${vertical.currentVisibility}%` }} />
+            </div>
+            <dl>
+              <div>
+                <dt>Opportunity</dt>
+                <dd>{vertical.opportunity}</dd>
               </div>
-              <h2>{lot.lot}</h2>
-              <p>{lot.product}</p>
-              <div className="lot-stat">
-                <strong>{utilization}%</strong>
-                <span>
-                  {lot.occupied.toLocaleString()} / {lot.capacity.toLocaleString()}
-                </span>
+              <div>
+                <dt>Day 1 internal data request</dt>
+                <dd>{vertical.internalDataNeeded}</dd>
               </div>
-              <div className="progress-track">
-                <div className={lot.forecast} style={{ width: `${Math.min(utilization, 100)}%` }} />
+              <div>
+                <dt>Executive recommendation</dt>
+                <dd>{vertical.recommendedAction}</dd>
               </div>
-              <dl>
-                <div>
-                  <dt>Revenue</dt>
-                  <dd>{formatCurrency(lot.revenue)}</dd>
-                </div>
-                <div>
-                  <dt>Yield</dt>
-                  <dd>${lot.yield.toFixed(lot.yield > 1000 ? 0 : 1)}</dd>
-                </div>
-                <div>
-                  <dt>Dwell</dt>
-                  <dd>{lot.dwellTime}</dd>
-                </div>
-              </dl>
-              <SourceBadge source={lot.source} />
-            </article>
-          );
-        })}
+            </dl>
+            <SourceBadge source={vertical.source} />
+          </article>
+        ))}
       </section>
-
-      {commercialDecisions.length > 0 && (
-        <section className="panel">
-          <PanelHeading icon={ListChecks} title="Revenue Leakage Actions" meta="Parking and commercial actions ranked by urgency" />
-          <DecisionRows decisions={commercialDecisions} />
-        </section>
-      )}
     </div>
   );
 }
 
-function ContractsActions({
-  contracts,
+function AgreementGovernance({
+  agreements,
   decisions,
   isCompact,
 }: {
-  contracts: ContractMetric[];
+  agreements: AgreementRecord[];
   decisions: DecisionItem[];
   isCompact: boolean;
 }) {
-  const contractDecisions = decisions.filter((item) => item.domain === "Contracts");
+  const agreementChart = agreements.map((agreement) => ({
+    name: agreement.tenantOrVendor,
+    completeness: agreement.completeness,
+    value: Math.round(agreement.value / 1000),
+  }));
+  const agreementDecisions = decisions.filter((decision) => decision.domain === "Lease Governance");
 
   return (
     <div className="view-stack">
+      <section className="summary-strip">
+        <SummaryTile icon={Briefcase} label="Agreement records" value={String(agreements.length)} source="Illustrative Model" />
+        <SummaryTile
+          icon={Gauge}
+          label="Avg completeness"
+          value={`${Math.round(agreements.reduce((sum, item) => sum + item.completeness, 0) / Math.max(agreements.length, 1))}%`}
+          source="Illustrative Model"
+        />
+        <SummaryTile
+          icon={AlertTriangle}
+          label="Compliance flags"
+          value={String(agreements.filter((item) => item.complianceFlag !== "normal").length)}
+          source="Illustrative Model"
+        />
+        <SummaryTile
+          icon={Landmark}
+          label="Modeled value"
+          value={formatCurrency(agreements.reduce((sum, item) => sum + item.value, 0))}
+          source="Illustrative Model"
+        />
+      </section>
+
       <section className="dashboard-grid two-one">
         <article className="panel">
-          <PanelHeading icon={Briefcase} title="Vendor Health" meta="Renewal urgency, SLA score, and exposure" />
-          <div className="contract-table" role="table" aria-label="Contract risk table">
-            <div className="contract-header" role="row">
-              <span>Vendor</span>
-              <span>Value</span>
-              <span>SLA</span>
-              <span>Status</span>
-            </div>
-            {contracts.map((contract) => (
-              <div className="contract-row" role="row" key={contract.id}>
-                <div>
-                  <div className="row-title">
-                    {contract.vendor} <span>{contract.airport}</span>
-                  </div>
-                  <p>{contract.contractType}</p>
-                  <small>Renewal {contract.renewalDate}</small>
+          <PanelHeading icon={BarChart3} title="Agreement Completeness" meta="Taxonomy hygiene before executive reporting" />
+          <div className="chart-frame">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={agreementChart} margin={{ top: 10, right: 16, bottom: 0, left: -10 }}>
+                <CartesianGrid stroke="#e5e7eb" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  axisLine={false}
+                  interval={isCompact ? 1 : 0}
+                  height={72}
+                  angle={isCompact ? 0 : -18}
+                  textAnchor={isCompact ? "middle" : "end"}
+                />
+                <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
+                <Tooltip />
+                <Bar dataKey="completeness" name="Completeness" fill="#275d92" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </article>
+
+        <article className="panel">
+          <PanelHeading icon={ListChecks} title="Lease Governance Actions" meta="Agreement work tied to a Commercial BI program" />
+          <DecisionRows decisions={agreementDecisions.length > 0 ? agreementDecisions : decisions} />
+        </article>
+      </section>
+
+      <section className="panel">
+        <PanelHeading icon={Briefcase} title="Agreement Register Model" meta="Illustrative fields the Director would standardize" />
+        <div className="agreement-table" role="table" aria-label="Agreement register model">
+          <div className="agreement-header" role="row">
+            <span>Agreement</span>
+            <span>Value</span>
+            <span>Completeness</span>
+            <span>Action</span>
+          </div>
+          {agreements.map((agreement) => (
+            <div className="agreement-row" role="row" key={agreement.id}>
+              <div>
+                <div className="row-title">
+                  {agreement.tenantOrVendor} <span>{agreement.airport}</span>
                 </div>
-                <strong>{formatCurrency(contract.value)}</strong>
-                <div className="sla-cell">
-                  <span>{contract.slaScore}%</span>
-                  <div className="progress-track">
-                    <div className={contract.status} style={{ width: `${contract.slaScore}%` }} />
-                  </div>
-                </div>
-                <StatusPill status={contract.status} />
-                <p className="contract-risk">{contract.risk}</p>
-                <SourceBadge source={contract.source} />
+                <p>{agreement.agreementType}</p>
+                <small>Expiration {agreement.expiration}</small>
               </div>
+              <strong>{formatCurrency(agreement.value)}</strong>
+              <div className="sla-cell">
+                <span>{agreement.completeness}%</span>
+                <div className="progress-track">
+                  <div className={agreement.complianceFlag} style={{ width: `${agreement.completeness}%` }} />
+                </div>
+              </div>
+              <div>
+                <StatusPill status={agreement.complianceFlag} />
+                <p>{agreement.recommendedAction}</p>
+                <SourceBadge source={agreement.source} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function DataStrategyRoadmap({
+  assets,
+  decisions,
+  isCompact,
+}: {
+  assets: DataAsset[];
+  decisions: DecisionItem[];
+  isCompact: boolean;
+}) {
+  const qualityChart = assets.map((asset) => ({
+    name: asset.sourceName,
+    quality: asset.qualityStatus === "normal" ? 90 : asset.qualityStatus === "warning" ? 64 : 38,
+  }));
+  const strategyDecisions = decisions.filter((decision) => decision.domain === "Data Strategy" || decision.domain === "Commercial BI");
+
+  return (
+    <div className="view-stack">
+      <section className="dashboard-grid equal">
+        <article className="panel">
+          <PanelHeading icon={Wrench} title="Data Asset Readiness" meta="Public anchors separated from internal feeds to request" />
+          <div className="chart-frame">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={qualityChart} margin={{ top: 8, right: 18, bottom: 0, left: -12 }}>
+                <CartesianGrid stroke="#e5e7eb" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  axisLine={false}
+                  interval={isCompact ? 1 : 0}
+                  angle={isCompact ? 0 : -18}
+                  textAnchor={isCompact ? "middle" : "end"}
+                  height={isCompact ? 52 : 78}
+                />
+                <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
+                <Tooltip formatter={(value: number) => `${value}%`} />
+                <Bar dataKey="quality" name="Readiness proxy" fill="#275d92" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </article>
+
+        <article className="panel">
+          <PanelHeading icon={Users} title="Training & Adoption" meta="Dashboard success depends on Commercial staff use" />
+          <div className="adoption-list">
+            {adoptionItems.map((item) => (
+              <AdoptionRow item={item} key={item.id} />
+            ))}
+          </div>
+        </article>
+      </section>
+
+      <section className="asset-grid">
+        {assets.map((asset) => (
+          <article className={`asset-card ${asset.qualityStatus}`} key={asset.id}>
+            <div className="metric-topline">
+              <span className="airport-code small">{asset.airport}</span>
+              <StatusPill status={asset.qualityStatus} />
+            </div>
+            <h2>{asset.sourceName}</h2>
+            <p>{asset.roleUseCase}</p>
+            <dl>
+              <div>
+                <dt>Owner</dt>
+                <dd>{asset.owner}</dd>
+              </div>
+              <div>
+                <dt>Cadence</dt>
+                <dd>{asset.refreshCadence}</dd>
+              </div>
+              <div>
+                <dt>Access</dt>
+                <dd>{asset.accessStatus}</dd>
+              </div>
+            </dl>
+            <SourceBadge source={asset.source} />
+          </article>
+        ))}
+      </section>
+
+      <section className="dashboard-grid two-one">
+        <article className="panel">
+          <PanelHeading icon={CalendarDays} title="First 90 Days Roadmap" meta="A practical path from public evidence to governed BI" />
+          <div className="roadmap-list">
+            {roadmapItems.map((item) => (
+              <RoadmapRow item={item} key={item.id} />
             ))}
           </div>
         </article>
 
         <article className="panel">
-          <PanelHeading icon={Wrench} title="Procurement Pipeline" meta="Open value by stage" />
-          <div className="chart-frame">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={procurementStages} margin={{ top: 10, right: 12, bottom: 0, left: -12 }}>
-                <CartesianGrid stroke="#e5e7eb" vertical={false} />
-                <XAxis
-                  dataKey="stage"
-                  tickLine={false}
-                  axisLine={false}
-                  interval={isCompact ? 1 : 0}
-                  angle={isCompact ? 0 : -24}
-                  textAnchor={isCompact ? "middle" : "end"}
-                  height={isCompact ? 44 : 70}
-                />
-                <YAxis tickLine={false} axisLine={false} />
-                <Tooltip formatter={(value: number, name) => (name === "value" ? formatCurrency(value) : value)} />
-                <Bar dataKey="value" name="Value" fill="#275d92" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <PanelHeading icon={ListChecks} title="Strategy Decisions" meta="Roadmap choices that need leadership alignment" />
+          <DecisionRows decisions={strategyDecisions.length > 0 ? strategyDecisions : decisions} />
         </article>
-      </section>
-
-      <section className="panel">
-        <PanelHeading icon={ListChecks} title="Contract Decision Queue" meta="Executive approvals and owner accountability" />
-        <DecisionRows decisions={contractDecisions.length > 0 ? contractDecisions : decisions} />
       </section>
     </div>
   );
 }
 
-function ExecutiveExceptions({ events }: { events: OperationalEvent[] }) {
+function DomainRiskPanel({ risks }: { risks: DomainRisk[] }) {
   return (
     <article className="panel">
-      <PanelHeading icon={AlertTriangle} title="Today&apos;s Exceptions" meta={`${events.length} visible items`} />
-      <AlertList events={events} />
+      <PanelHeading icon={Target} title="Role Risk Map" meta="Lowest score receives attention first" />
+      <div className="risk-list">
+        {risks.map((risk) => (
+          <div className="risk-row" key={`${risk.airport}-${risk.domain}`}>
+            <div className="risk-score" style={{ color: statusColors[risk.status] }}>
+              {risk.score}
+            </div>
+            <div>
+              <div className="row-title">
+                {risk.domain} <span>{risk.airport}</span>
+              </div>
+              <p>{risk.driver}</p>
+              <strong>{risk.action}</strong>
+            </div>
+            <SourceBadge source={risk.source} />
+          </div>
+        ))}
+      </div>
     </article>
   );
 }
 
-function AlertList({ events }: { events: OperationalEvent[] }) {
-  if (events.length === 0) {
-    return <div className="empty-state">No matching exceptions for the current filters.</div>;
+function InsightPanel({ insights }: { insights: InsightItem[] }) {
+  if (insights.length === 0) {
+    return (
+      <article className="panel">
+        <PanelHeading icon={FileText} title="Public Information Story" meta="No matching insights for current filters" />
+        <div className="empty-state">No matching public-source insights.</div>
+      </article>
+    );
   }
 
   return (
-    <div className="alert-list">
-      {events.map((event) => (
-        <div className="alert-row" key={event.id}>
-          <div className={`severity-rail ${event.severity}`} />
-          <div>
-            <div className="row-title">
-              {event.location} <span>{event.airport}</span>
-            </div>
-            <p>{event.impact}</p>
-            <div className="row-meta">
-              <span>
-                <Clock3 aria-hidden="true" size={14} />
-                {event.timestamp}
-              </span>
-              <span>
-                <Users aria-hidden="true" size={14} />
-                {event.owner}
-              </span>
-              <SourceBadge source={event.source} />
+    <article className="panel">
+      <PanelHeading icon={FileText} title="Public Information Story" meta="Observation, internal data request, executive action" />
+      <div className="insight-list">
+        {insights.map((insight) => (
+          <div className="insight-row" key={insight.id}>
+            <div className={`severity-rail ${insight.status}`} />
+            <div>
+              <div className="row-title">
+                {insight.title} <span>{insight.airport}</span>
+              </div>
+              <p>
+                <strong>Public evidence:</strong> {insight.publicObservation}
+              </p>
+              <p>
+                <strong>Business question:</strong> {insight.businessQuestion}
+              </p>
+              <p>
+                <strong>Day 1 data request:</strong> {insight.internalDataNeeded}
+              </p>
+              <p>
+                <strong>Recommendation:</strong> {insight.recommendation}
+              </p>
+              <SourceBadge source={insight.source} />
             </div>
           </div>
-          <StatusPill status={event.severity} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function DecisionWorklist({ decisions }: { decisions: DecisionItem[] }) {
-  return (
-    <article className="panel">
-      <PanelHeading icon={ListChecks} title="Decision Worklist" meta={`${decisions.length} scoped actions`} />
-      <DecisionRows decisions={decisions} />
+        ))}
+      </div>
     </article>
   );
 }
@@ -936,7 +921,7 @@ function DecisionRows({ decisions }: { decisions: DecisionItem[] }) {
                 {decision.owner}
               </span>
               <span>
-                <CalendarDays aria-hidden="true" size={14} />
+                <Clock3 aria-hidden="true" size={14} />
                 {decision.dueDate}
               </span>
               <SourceBadge source={decision.source} />
@@ -948,6 +933,41 @@ function DecisionRows({ decisions }: { decisions: DecisionItem[] }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function AdoptionRow({ item }: { item: TrainingOrAdoptionItem }) {
+  return (
+    <div className="adoption-row">
+      <div className={`severity-rail ${item.status}`} />
+      <div>
+        <div className="row-title">{item.audience}</div>
+        <p>{item.skillGap}</p>
+        <div className="row-meta">
+          <span>{item.toolOrProcess}</span>
+          <span>{item.nextMilestone}</span>
+          <SourceBadge source={item.source} />
+        </div>
+      </div>
+      <StatusPill status={item.status} />
+    </div>
+  );
+}
+
+function RoadmapRow({ item }: { item: RoadmapItem }) {
+  return (
+    <div className="roadmap-row">
+      <div>
+        <span className="phase-pill">{item.phase}</span>
+        <div className="row-title">{item.title}</div>
+        <p>{item.outcome}</p>
+        <div className="row-meta">
+          <span>{item.owner}</span>
+          <SourceBadge source={item.source} />
+        </div>
+      </div>
+      <StatusPill status={item.status} />
     </div>
   );
 }

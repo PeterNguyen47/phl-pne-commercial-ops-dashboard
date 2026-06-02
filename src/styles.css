@@ -152,6 +152,8 @@ h2 {
 .metric-card,
 .panel,
 .lot-card,
+.vertical-card,
+.asset-card,
 .summary-tile {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -318,12 +320,17 @@ h2 {
   background: #e4f3ea;
 }
 
-.source-badge.sample-internal {
+.source-badge.public-source {
+  color: #245d45;
+  background: #e4f3ea;
+}
+
+.source-badge.illustrative-model {
   color: #7a4a00;
   background: #fff0d2;
 }
 
-.source-badge.derived {
+.source-badge.derived-from-public {
   color: #214d80;
   background: #e1edf9;
 }
@@ -572,22 +579,45 @@ h2 {
   gap: 12px;
 }
 
-.lot-card {
+.vertical-grid,
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.lot-card,
+.vertical-card,
+.asset-card {
   display: grid;
   min-height: 294px;
   padding: 16px;
   border-top-width: 4px;
 }
 
-.lot-card.normal {
+.vertical-card {
+  min-height: 360px;
+}
+
+.asset-card {
+  min-height: 270px;
+}
+
+.lot-card.normal,
+.vertical-card.normal,
+.asset-card.normal {
   border-top-color: var(--green);
 }
 
-.lot-card.warning {
+.lot-card.warning,
+.vertical-card.warning,
+.asset-card.warning {
   border-top-color: var(--amber);
 }
 
-.lot-card.critical {
+.lot-card.critical,
+.vertical-card.critical,
+.asset-card.critical {
   border-top-color: var(--red);
 }
 
@@ -633,20 +663,34 @@ h2 {
   background: var(--red);
 }
 
-.lot-card dl {
+.lot-card dl,
+.vertical-card dl,
+.asset-card dl {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin: 16px 0 12px;
 }
 
-.lot-card dt {
+.vertical-card dl,
+.asset-card dl {
+  grid-template-columns: 1fr;
+}
+
+.lot-card dl {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lot-card dt,
+.vertical-card dt,
+.asset-card dt {
   color: var(--muted);
   font-size: 0.73rem;
   font-weight: 700;
 }
 
-.lot-card dd {
+.lot-card dd,
+.vertical-card dd,
+.asset-card dd {
   margin: 2px 0 0;
   color: var(--ink);
   font-weight: 800;
@@ -663,11 +707,14 @@ h2 {
   font-weight: 800;
 }
 
+.agreement-table,
 .contract-table {
   display: grid;
   gap: 8px;
 }
 
+.agreement-header,
+.agreement-row,
 .contract-header,
 .contract-row {
   display: grid;
@@ -676,6 +723,7 @@ h2 {
   align-items: center;
 }
 
+.agreement-header,
 .contract-header {
   padding: 0 12px 8px;
   color: var(--muted);
@@ -684,6 +732,7 @@ h2 {
   text-transform: uppercase;
 }
 
+.agreement-row,
 .contract-row {
   position: relative;
   min-height: 116px;
@@ -693,6 +742,7 @@ h2 {
   background: #fbfcfe;
 }
 
+.agreement-row small,
 .contract-row small {
   color: var(--muted);
 }
@@ -721,6 +771,80 @@ h2 {
   color: var(--muted);
   background: #fbfcfe;
   text-align: center;
+}
+
+.hero-copy {
+  max-width: 720px;
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.role-list,
+.insight-list,
+.adoption-list,
+.roadmap-list {
+  display: grid;
+  gap: 10px;
+}
+
+.role-row,
+.insight-row,
+.adoption-row,
+.roadmap-row {
+  display: grid;
+  gap: 12px;
+  align-items: center;
+  min-height: 78px;
+  padding: 12px;
+  border: 1px solid #e4e9f0;
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.role-row {
+  grid-template-columns: minmax(0, 1fr) minmax(170px, auto);
+}
+
+.insight-row,
+.adoption-row {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.roadmap-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.role-row p,
+.insight-row p,
+.adoption-row p,
+.roadmap-row p,
+.vertical-card p,
+.asset-card p,
+.agreement-row p {
+  margin: 4px 0;
+  color: var(--muted);
+}
+
+.role-module {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  text-align: right;
+}
+
+.role-module strong {
+  color: #1f344f;
+}
+
+.phase-pill {
+  display: inline-flex;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #214d80;
+  background: #e1edf9;
+  font-size: 0.74rem;
+  font-weight: 800;
 }
 
 .source-library {
@@ -771,6 +895,8 @@ h2 {
 
   .metric-grid,
   .lot-grid,
+  .vertical-grid,
+  .asset-grid,
   .summary-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -807,6 +933,8 @@ h2 {
   .airport-context,
   .metric-grid,
   .lot-grid,
+  .vertical-grid,
+  .asset-grid,
   .summary-strip,
   .source-library {
     grid-template-columns: 1fr;
@@ -846,23 +974,36 @@ h2 {
   .risk-row,
   .alert-row,
   .decision-row,
-  .staff-row {
+  .staff-row,
+  .role-row,
+  .insight-row,
+  .adoption-row,
+  .roadmap-row {
     grid-template-columns: auto minmax(0, 1fr);
   }
 
   .risk-row .source-badge,
   .alert-row .status-pill,
   .decision-impact,
-  .staff-row .status-pill {
+  .staff-row .status-pill,
+  .adoption-row .status-pill,
+  .roadmap-row .status-pill,
+  .role-module {
     grid-column: 2;
     justify-self: start;
     text-align: left;
   }
 
+  .role-module {
+    justify-items: start;
+  }
+
+  .agreement-header,
   .contract-header {
     display: none;
   }
 
+  .agreement-row,
   .contract-row {
     grid-template-columns: 1fr;
   }

@@ -1,15 +1,30 @@
 export type AirportCode = "ALL" | "PHL" | "PNE";
 export type AirportOnlyCode = "PHL" | "PNE";
-export type SourceKind = "Public" | "Sample Internal" | "Derived";
+export type SourceKind = "Public Source" | "Illustrative Model" | "Derived From Public";
 export type StatusKind = "normal" | "warning" | "critical";
 export type TrendKind = "up" | "down" | "flat";
-export type Domain = "Ground Operations" | "Parking & Commercial" | "Contracts";
 export type PeriodKey = "today" | "7d" | "30d";
+
+export type CommercialVertical =
+  | "Parking"
+  | "Ground Transportation"
+  | "Concessions"
+  | "Advertising"
+  | "Property Development"
+  | "Terminal Leases"
+  | "Ground Leases"
+  | "Air Cargo"
+  | "Gate Utilization"
+  | "Airline Schedules"
+  | "Aviation Activity";
+
+export type Domain = "Commercial BI" | "Revenue Verticals" | "Lease Governance" | "Data Strategy";
 
 export interface SourceReference {
   label: string;
   url: string;
   kind: SourceKind;
+  useCase: string;
 }
 
 export interface AirportProfile {
@@ -33,43 +48,93 @@ export interface KpiMetric {
   airport: AirportCode;
 }
 
-export interface OperationalEvent {
-  id: string;
-  airport: AirportOnlyCode;
+export interface DomainRisk {
   domain: Domain;
-  severity: StatusKind;
-  location: string;
-  timestamp: string;
-  impact: string;
-  owner: string;
+  airport: AirportCode;
+  score: number;
+  status: StatusKind;
+  driver: string;
+  action: string;
   source: SourceKind;
 }
 
-export interface ParkingLotMetric {
-  id: string;
-  airport: AirportOnlyCode;
-  lot: string;
-  product: string;
-  capacity: number;
-  occupied: number;
-  revenue: number;
-  yield: number;
-  dwellTime: string;
-  forecast: StatusKind;
-  source: SourceKind;
-}
-
-export interface ContractMetric {
+export interface CommercialVerticalMetric {
   id: string;
   airport: AirportCode;
-  vendor: string;
-  contractType: string;
-  value: number;
+  vertical: CommercialVertical;
+  publicSignal: string;
+  currentVisibility: number;
+  opportunity: string;
+  internalDataNeeded: string;
+  recommendedAction: string;
   status: StatusKind;
-  renewalDate: string;
-  slaScore: number;
-  risk: string;
   source: SourceKind;
+}
+
+export interface DataAsset {
+  id: string;
+  airport: AirportCode;
+  sourceName: string;
+  owner: string;
+  refreshCadence: string;
+  qualityStatus: StatusKind;
+  accessStatus: string;
+  roleUseCase: string;
+  source: SourceKind;
+}
+
+export interface AgreementRecord {
+  id: string;
+  airport: AirportCode;
+  agreementType: string;
+  tenantOrVendor: string;
+  value: number;
+  expiration: string;
+  completeness: number;
+  complianceFlag: StatusKind;
+  recommendedAction: string;
+  source: SourceKind;
+}
+
+export interface InsightItem {
+  id: string;
+  airport: AirportCode;
+  title: string;
+  publicObservation: string;
+  businessQuestion: string;
+  internalDataNeeded: string;
+  recommendation: string;
+  status: StatusKind;
+  source: SourceKind;
+}
+
+export interface TrainingOrAdoptionItem {
+  id: string;
+  audience: string;
+  skillGap: string;
+  toolOrProcess: string;
+  status: StatusKind;
+  nextMilestone: string;
+  source: SourceKind;
+}
+
+export interface RoadmapItem {
+  id: string;
+  phase: string;
+  title: string;
+  outcome: string;
+  owner: string;
+  status: StatusKind;
+  source: SourceKind;
+}
+
+export interface TrendPoint {
+  label: string;
+  phlOpportunity: number;
+  pneOpportunity: number;
+  dataReadiness: number;
+  agreementCompleteness: number;
+  adoption: number;
 }
 
 export interface DecisionItem {
@@ -84,45 +149,4 @@ export interface DecisionItem {
   recommendation: string;
   status: "New" | "In Review" | "Escalated" | "Approved";
   source: SourceKind;
-}
-
-export interface DomainRisk {
-  domain: Domain;
-  airport: AirportCode;
-  score: number;
-  status: StatusKind;
-  driver: string;
-  action: string;
-  source: SourceKind;
-}
-
-export interface TrendPoint {
-  label: string;
-  phlRevenue: number;
-  pneRevenue: number;
-  revenueAtRisk: number;
-  groundSla: number;
-  contractRisk: number;
-}
-
-export interface DelayContributor {
-  label: string;
-  airport: AirportOnlyCode;
-  minutes: number;
-  events: number;
-  source: SourceKind;
-}
-
-export interface StaffingMetric {
-  area: string;
-  airport: AirportOnlyCode;
-  planned: number;
-  actual: number;
-  status: StatusKind;
-}
-
-export interface ProcurementStage {
-  stage: string;
-  count: number;
-  value: number;
 }
