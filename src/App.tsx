@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import {
   AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
+  Brain,
   Briefcase,
   Building2,
   CalendarDays,
@@ -13,6 +14,7 @@ import {
   Database,
   Download,
   ExternalLink,
+  FileUp,
   FileJson,
   FileSpreadsheet,
   FileText,
@@ -25,6 +27,7 @@ import {
   ShieldAlert,
   Target,
   TrendingUp,
+  Upload,
   Users,
   Wrench,
   type LucideIcon,
@@ -87,6 +90,28 @@ interface ReportDefinition {
   scope: string;
   description: string;
   rows: ReportRow[];
+}
+
+interface TemplateFieldProfile {
+  name: string;
+  mapped: boolean;
+  dataType: "Quantitative" | "Qualitative" | "Blank / Unknown";
+  sampleValues: string[];
+}
+
+interface TemplateProfile {
+  fileName: string;
+  rowCount: number;
+  fields: TemplateFieldProfile[];
+  uploadedAt: string;
+}
+
+interface PredictionSummary {
+  readinessScore: number;
+  confidence: number;
+  predictedRisk: string;
+  recommendedAction: string;
+  executiveFocus: string;
 }
 
 const airportOptions: Array<{ label: string; value: AirportCode; icon: LucideIcon }> = [
@@ -200,6 +225,125 @@ function downloadReport(report: ReportDefinition, format: ReportFormat) {
 
 function reportRow(section: string, name: string, values: Omit<ReportRow, "section" | "name">): ReportRow {
   return { section, name, ...values };
+}
+
+function parseCsvLine(line: string) {
+  const cells: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    const nextCharacter = line[index + 1];
+
+    if (character === '"' && nextCharacter === '"') {
+      current += '"';
+      index += 1;
+    } else if (character === '"') {
+      inQuotes = !inQuotes;
+    } else if (character === "," && !inQuotes) {
+      cells.push(current.trim());
+      current = "";
+    } else {
+      current += character;
+    }
+  }
+
+  cells.push(current.trim());
+  return cells;
+}
+
+function inferFieldType(values: string[]): TemplateFieldProfile["dataType"] {
+  const populatedValues = values.map((value) => value.trim()).filter(Boolean);
+
+  if (populatedValues.length === 0) {
+    return "Blank / Unknown";
+  }
+
+  return populatedValues.every((value) => Number.isFinite(Number(value.replace(/[$,%]/g, ""))))
+    ? "Quantitative"
+    : "Qualitative";
+}
+
+function profileRows(fileName: string, headers: string[], rows: string[][], knownColumns: Set<string>): TemplateProfile {
+  const normalizedHeaders = headers.map((header, index) => header || `unnamed_column_${index + 1}`);
+  const fields = normalizedHeaders.map((header, columnIndex) => {
+    const sampleValues = rows.map((row) => row[columnIndex] ?? "").filter(Boolean).slice(0, 3);
+
+    return {
+      name: header,
+      mapped: knownColumns.has(header.toLowerCase()),
+      dataType: inferFieldType(rows.map((row) => row[columnIndex] ?? "")),
+      sampleValues,
+    };
+  });
+
+  return {
+    fileName,
+    rowCount: rows.length,
+    fields,
+    uploadedAt: new Date().toLocaleString(),
+  };
+}
+
+function parseTemplateUpload(fileName: string, text: string, knownColumns: Set<string>): TemplateProfile {
+  const trimmed = text.trim();
+
+  if (fileName.toLowerCase().endsWith(".json")) {
+    const parsed = JSON.parse(trimmed) as unknown;
+    const records = Array.isArray(parsed) ? parsed : [parsed];
+    const objectRecords = records.filter((record): record is Record<string, unknown> => Boolean(record) && typeof record === "object");
+    const headers = Array.from(new Set(objectRecords.flatMap((record) => Object.keys(record))));
+    const rows = objectRecords.map((record) => headers.map((header) => String(record[header] ?? "")));
+
+    return profileRows(fileName, headers, rows, knownColumns);
+  }
+
+  const lines = trimmed.split(/\r?\n/).filter(Boolean);
+  const headers = parseCsvLine(lines[0] ?? "");
+  const rows = lines.slice(1).map(parseCsvLine);
+
+  return profileRows(fileName, headers, rows, knownColumns);
+}
+
+function predictTemplateReadiness(templateProfile?: TemplateProfile): PredictionSummary {
+  if (!templateProfile) {
+    return {
+      readinessScore: 58,
+      confidence: 46,
+      predictedRisk: "No uploaded workstream template yet; forecast uses dashboard fixture coverage only.",
+      recommendedAction: "Upload a department or unit template to classify mapped fields, custom fields, and data quality signals.",
+      executiveFocus: "Use the first upload to align team workflow fields with centralized metadata without forcing teams to abandon their current process.",
+    };
+  }
+
+  const mappedCount = templateProfile.fields.filter((field) => field.mapped).length;
+  const quantitativeCount = templateProfile.fields.filter((field) => field.dataType === "Quantitative").length;
+  const qualitativeCount = templateProfile.fields.filter((field) => field.dataType === "Qualitative").length;
+  const fieldCount = Math.max(templateProfile.fields.length, 1);
+  const mappedCoverage = mappedCount / fieldCount;
+  const mixedEvidenceBonus = quantitativeCount > 0 && qualitativeCount > 0 ? 12 : 0;
+  const rowVolumeBonus = Math.min(templateProfile.rowCount, 25);
+  const readinessScore = Math.min(96, Math.round(mappedCoverage * 55 + mixedEvidenceBonus + rowVolumeBonus + 18));
+  const confidence = Math.min(92, Math.round(42 + mappedCoverage * 30 + Math.min(templateProfile.rowCount, 20)));
+  const customCount = templateProfile.fields.length - mappedCount;
+
+  return {
+    readinessScore,
+    confidence,
+    predictedRisk:
+      customCount > mappedCount
+        ? "High custom-field volume; preserve the workflow, but require metadata definitions before executive rollup."
+        : "Template is mostly aligned to dashboard fields; next risk is refresh cadence and owner accountability.",
+    recommendedAction:
+      customCount > 0
+        ? `Register ${customCount} custom field${customCount === 1 ? "" : "s"} as qualitative or quantitative metadata before the next reporting cycle.`
+        : "Approve the template as a source candidate for recurring executive reporting.",
+    executiveFocus:
+      qualitativeCount > 0
+        ? "Qualitative inputs can surface staff morale, role friction, tenant sentiment, and customer satisfaction alongside numeric performance."
+        : "Add qualitative context fields so the executive view can explain human impact, morale, and service experience beyond numeric performance.",
+  };
 }
 
 function sourceClass(source: SourceKind) {
@@ -329,6 +473,8 @@ function createReportDefinitions(period: PeriodKey): ReportDefinition[] {
       airport: insight.airport,
       citation: insight.citationLabel,
       citationDate: insight.citationDate,
+      secondaryCitation: insight.secondaryCitationLabel ?? "",
+      secondaryCitationDate: insight.secondaryCitationDate ?? "",
       trendSignal: insight.trendSignal,
       businessQuestion: insight.businessQuestion,
       internalDataNeeded: insight.internalDataNeeded,
@@ -456,6 +602,8 @@ function App() {
   const [selectedAirport, setSelectedAirport] = useState<AirportCode>("ALL");
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodKey>("today");
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
+  const [templateProfile, setTemplateProfile] = useState<TemplateProfile>();
+  const [templateError, setTemplateError] = useState("");
   const isCompact = useCompactViewport();
 
   // All scoped collections are memoized from the same filter state so cards,
@@ -494,13 +642,39 @@ function App() {
   );
   const chartData = useMemo(() => getChartData(selectedPeriod, selectedAirport), [selectedAirport, selectedPeriod]);
   const reportDefinitions = useMemo(() => createReportDefinitions(selectedPeriod), [selectedPeriod]);
+  const knownReportColumns = useMemo(
+    () => new Set(reportDefinitions.flatMap((report) => report.rows.flatMap((row) => Object.keys(row).map((key) => key.toLowerCase())))),
+    [reportDefinitions],
+  );
+  const predictionSummary = useMemo(() => predictTemplateReadiness(templateProfile), [templateProfile]);
+
+  async function handleTemplateUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      setTemplateProfile(parseTemplateUpload(file.name, text, knownReportColumns));
+      setTemplateError("");
+    } catch (error) {
+      setTemplateProfile(undefined);
+      setTemplateError(error instanceof Error ? error.message : "Unable to read the uploaded template.");
+    } finally {
+      event.currentTarget.value = "";
+    }
+  }
 
   return (
     <div className="app-shell">
       <div className="city-service-bar">
         <span>City of Philadelphia</span>
+        <span className="service-separator" aria-hidden="true">
+          {" / "}
+        </span>
         <strong>Department of Aviation</strong>
-        <span>PhilaUI-aligned civic interface pattern</span>
       </div>
 
       <header className="topbar">
@@ -544,25 +718,11 @@ function App() {
             value={severityFilter}
             onChange={setSeverityFilter}
           />
+          <div className="filter-help" aria-live="polite">
+            Airport scopes records, period changes trend snapshots, and status narrows action/watch items.
+          </div>
         </div>
       </header>
-
-      <section className="standards-note" aria-label="City interface standard">
-        <div>
-          <p className="eyebrow">City Standard Alignment</p>
-          <h2>React prototype shaped for PhilaUI replication</h2>
-          <p>
-            The interface uses City-style civic hierarchy, blue and gold accenting, accessible button controls,
-            restrained status colors, visible source labels, and report exports. In a production City application,
-            these patterns could be rebuilt with PhilaUI Vue components while preserving the same data model and
-            executive workflow.
-          </p>
-        </div>
-        <a href="https://ui.phila.gov/" target="_blank" rel="noopener noreferrer">
-          <ExternalLink aria-hidden="true" size={15} />
-          PhilaUI reference
-        </a>
-      </section>
 
       <section className="airport-context" aria-label="Airport profiles">
         {airportProfiles
@@ -587,7 +747,15 @@ function App() {
           ))}
       </section>
 
-      <ReportCenter reports={reportDefinitions} />
+      <ReportCenter
+        reports={reportDefinitions}
+        templateProfile={templateProfile}
+        templateError={templateError}
+        prediction={predictionSummary}
+        onTemplateUpload={handleTemplateUpload}
+      />
+
+      <ProvenanceExplainer />
 
       <nav className="view-tabs" aria-label="Dashboard views">
         {viewTabs.map((tab) => {
@@ -615,6 +783,9 @@ function App() {
             decisions={scopedDecisions}
             chartData={chartData}
             isCompact={isCompact}
+            templateProfile={templateProfile}
+            prediction={predictionSummary}
+            onTemplateUpload={handleTemplateUpload}
           />
         )}
         {selectedView === "revenue" && (
@@ -623,6 +794,7 @@ function App() {
             insights={scopedInsights}
             chartData={chartData}
             isCompact={isCompact}
+            prediction={predictionSummary}
           />
         )}
         {selectedView === "agreements" && (
@@ -648,6 +820,16 @@ function App() {
           ))}
         </div>
       </footer>
+
+      <div className="civic-footer">
+        <p>
+          Interface pattern guided by{" "}
+          <a href="https://ui.phila.gov/" target="_blank" rel="noopener noreferrer">
+            PhilaUI
+          </a>{" "}
+          and the CityOfPhiladelphia/phila-ui reference.
+        </p>
+      </div>
     </div>
   );
 }
@@ -690,7 +872,7 @@ function SegmentedControl<T extends string>({
             key={option.value}
             type="button"
             title={option.label}
-            className={value === option.value ? "active" : ""}
+            className={`${value === option.value ? "active" : ""} filter-${option.value}`}
             onClick={() => onChange(option.value)}
           >
             <Icon aria-hidden="true" size={15} />
@@ -702,7 +884,19 @@ function SegmentedControl<T extends string>({
   );
 }
 
-function ReportCenter({ reports }: { reports: ReportDefinition[] }) {
+function ReportCenter({
+  reports,
+  templateProfile,
+  templateError,
+  prediction,
+  onTemplateUpload,
+}: {
+  reports: ReportDefinition[];
+  templateProfile?: TemplateProfile;
+  templateError: string;
+  prediction: PredictionSummary;
+  onTemplateUpload: (event: ChangeEvent<HTMLInputElement>) => void;
+}) {
   const formats: Array<{ format: ReportFormat; label: string; icon: LucideIcon }> = [
     { format: "csv", label: "CSV", icon: FileSpreadsheet },
     { format: "json", label: "JSON", icon: FileJson },
@@ -714,13 +908,71 @@ function ReportCenter({ reports }: { reports: ReportDefinition[] }) {
       <div className="report-heading">
         <div>
           <p className="eyebrow">Downloadable Reports</p>
-          <h2>Executive exports for portfolio review</h2>
+          <h2>Executive exports and workstream template intake</h2>
           <p>
-            Generate scoped CSV, JSON, or Markdown briefing files for airport-level review, dashboard modules,
-            evidence citations, agreements, and roadmap decisions.
+            Reports can follow department, unit, or workstream templates. Teams may keep their current workflow,
+            upload their filled template, and add new qualitative or quantitative fields for centralized metadata
+            reporting.
           </p>
         </div>
         <Download aria-hidden="true" size={22} />
+      </div>
+      <div className="template-intake">
+        <div>
+          <p className="eyebrow">Metadata Intake</p>
+          <h3>Upload a workstream template</h3>
+          <p>
+            Upload a CSV or JSON file from a unit such as parking, concessions, PNE administration, contracts, or IT.
+            Columns not currently in the dashboard are preserved as custom metadata so they can be tracked rather than
+            discarded.
+          </p>
+        </div>
+        <label className="upload-control">
+          <Upload aria-hidden="true" size={16} />
+          Upload template
+          <input type="file" accept=".csv,.json,text/csv,application/json" onChange={onTemplateUpload} />
+        </label>
+      </div>
+      <div className="template-results">
+        <article className="prediction-card">
+          <div className="metric-topline">
+            <span className="source-badge illustrative-model">Illustrative ML Model</span>
+            <Brain aria-hidden="true" size={18} />
+          </div>
+          <h3>Upload readiness prediction</h3>
+          <div className="prediction-score">{prediction.readinessScore}/100</div>
+          <p>{prediction.predictedRisk}</p>
+          <p>
+            <strong>Recommended action:</strong> {prediction.recommendedAction}
+          </p>
+          <p>
+            <strong>Executive focus:</strong> {prediction.executiveFocus}
+          </p>
+          <small>Confidence {prediction.confidence}% after the latest upload/refresh.</small>
+        </article>
+        <article className="template-profile-card">
+          <h3>{templateProfile ? templateProfile.fileName : "No template uploaded"}</h3>
+          {templateError && <p className="template-error">{templateError}</p>}
+          {templateProfile ? (
+            <>
+              <p>
+                {templateProfile.rowCount} rows | {templateProfile.fields.length} fields | Uploaded {templateProfile.uploadedAt}
+              </p>
+              <div className="field-chip-list">
+                {templateProfile.fields.slice(0, 10).map((field) => (
+                  <span className={field.mapped ? "mapped" : "custom"} key={field.name}>
+                    {field.name} | {field.mapped ? "Mapped" : "Custom"} | {field.dataType}
+                  </span>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p>
+              Use this intake to test how team-owned templates would feed centralized executive reporting while
+              preserving local columns for morale, satisfaction, notes, exceptions, or other qualitative context.
+            </p>
+          )}
+        </article>
       </div>
       <div className="report-grid">
         {reports.map((report) => (
@@ -745,6 +997,37 @@ function ReportCenter({ reports }: { reports: ReportDefinition[] }) {
   );
 }
 
+function ProvenanceExplainer() {
+  return (
+    <section className="provenance-explainer" aria-label="Data provenance and metadata model">
+      <article>
+        <SourceBadge source="Public Source" />
+        <h3>Public Source</h3>
+        <p>
+          Public information anchors the context: airport facts, City records, federal aviation datasets, and published
+          guidance. It is credible for framing questions, but it does not replace unit-owned operational records.
+        </p>
+      </article>
+      <article>
+        <SourceBadge source="Illustrative Model" />
+        <h3>Illustrative Model</h3>
+        <p>
+          Illustrative values represent how team workflows could feed a centralized metadata layer. Teams can keep their
+          own templates and add local columns while the system classifies fields for executive reporting.
+        </p>
+      </article>
+      <article>
+        <SourceBadge source="Derived From Public" />
+        <h3>Decision Metadata</h3>
+        <p>
+          The goal is not only numeric reporting. Qualitative fields such as staff morale, role friction, tenant
+          sentiment, customer satisfaction, and workflow blockers can explain why a metric is moving.
+        </p>
+      </article>
+    </section>
+  );
+}
+
 function CommercialBiCockpit({
   kpis,
   risks,
@@ -752,6 +1035,9 @@ function CommercialBiCockpit({
   decisions,
   chartData,
   isCompact,
+  templateProfile,
+  prediction,
+  onTemplateUpload,
 }: {
   kpis: KpiMetric[];
   risks: DomainRisk[];
@@ -765,6 +1051,9 @@ function CommercialBiCockpit({
     adoption: number;
   }>;
   isCompact: boolean;
+  templateProfile?: TemplateProfile;
+  prediction: PredictionSummary;
+  onTemplateUpload: (event: ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
     <div className="view-stack">
@@ -790,6 +1079,26 @@ function CommercialBiCockpit({
             title="BI Maturity Path"
             meta="Modeled opportunity decreases as data readiness, agreement completeness, and adoption improve"
           />
+          <div className="maturity-brief">
+            <div>
+              <h3>What the path means</h3>
+              <p>
+                The graph links template intake, agreement taxonomy, dashboard adoption, and modeled revenue risk.
+                As teams submit refreshed reports, a future production model would re-score data readiness, flag
+                quality issues, and recommend executive remediation actions.
+              </p>
+            </div>
+            <div className="maturity-upload">
+              <span className="source-badge illustrative-model">ML-ready intake</span>
+              <strong>{prediction.readinessScore}/100 readiness</strong>
+              <small>{templateProfile ? templateProfile.fileName : "Awaiting workstream upload"}</small>
+              <label className="upload-control compact-upload">
+                <FileUp aria-hidden="true" size={15} />
+                Upload template
+                <input type="file" accept=".csv,.json,text/csv,application/json" onChange={onTemplateUpload} />
+              </label>
+            </div>
+          </div>
           <div className="chart-frame tall">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={chartData} margin={{ top: 10, right: 32, bottom: 16, left: 0 }}>
@@ -852,7 +1161,7 @@ function CommercialBiCockpit({
 
       <section className="dashboard-grid equal">
         <DomainRiskPanel risks={risks} />
-        <InsightPanel insights={insights} />
+        <InsightPanel insights={insights} prediction={prediction} />
       </section>
 
       <section className="panel">
@@ -868,11 +1177,13 @@ function RevenueVerticals({
   insights,
   chartData,
   isCompact,
+  prediction,
 }: {
   verticals: CommercialVerticalMetric[];
   insights: InsightItem[];
   chartData: Array<{ label: string; opportunity: number }>;
   isCompact: boolean;
+  prediction: PredictionSummary;
 }) {
   return (
     <div className="view-stack">
@@ -921,7 +1232,7 @@ function RevenueVerticals({
           </div>
         </article>
 
-        <InsightPanel insights={insights} />
+        <InsightPanel insights={insights} prediction={prediction} />
       </section>
 
       <section className="vertical-grid">
@@ -1241,7 +1552,8 @@ function DomainRiskPanel({ risks }: { risks: DomainRisk[] }) {
         {risks.map((risk) => (
           <div className="risk-row" key={`${risk.airport}-${risk.domain}`}>
             <div className="risk-score" style={{ color: statusColors[risk.status] }}>
-              {risk.score}
+              <span>Score</span>
+              <strong>{risk.score}/100</strong>
             </div>
             <div>
               <div className="row-title">
@@ -1258,7 +1570,7 @@ function DomainRiskPanel({ risks }: { risks: DomainRisk[] }) {
   );
 }
 
-function InsightPanel({ insights }: { insights: InsightItem[] }) {
+function InsightPanel({ insights, prediction }: { insights: InsightItem[]; prediction?: PredictionSummary }) {
   if (insights.length === 0) {
     return (
       <article className="panel">
@@ -1296,6 +1608,17 @@ function InsightPanel({ insights }: { insights: InsightItem[] }) {
                   <ExternalLink aria-hidden="true" size={12} />
                 </a>{" "}
                 <span className="citation-date">({insight.citationDate})</span>
+                {insight.secondaryCitationUrl && insight.secondaryCitationLabel && (
+                  <>
+                    {" "}
+                    <span className="citation-date">also</span>{" "}
+                    <a href={insight.secondaryCitationUrl} target="_blank" rel="noopener noreferrer">
+                      {insight.secondaryCitationLabel}
+                      <ExternalLink aria-hidden="true" size={12} />
+                    </a>{" "}
+                    <span className="citation-date">({insight.secondaryCitationDate})</span>
+                  </>
+                )}
               </p>
               <p>
                 <strong>Trend signal:</strong> {insight.trendSignal}
@@ -1320,6 +1643,22 @@ function InsightPanel({ insights }: { insights: InsightItem[] }) {
           </div>
         ))}
       </div>
+      {prediction && (
+        <div className="ml-evidence-note">
+          <Brain aria-hidden="true" size={18} />
+          <div>
+            <h3>Predictive refresh layer</h3>
+            <p>
+              Each template upload or data refresh can update readiness, confidence, and risk signals. The executive
+              decision layer can then compare current evidence against predicted risk and choose remediation, escalation,
+              or a deeper unit review.
+            </p>
+            <strong>
+              Current prediction: {prediction.readinessScore}/100 readiness, {prediction.confidence}% confidence.
+            </strong>
+          </div>
+        </div>
+      )}
     </article>
   );
 }

@@ -2,7 +2,7 @@
 
 Commercial analytics prototype for Philadelphia International Airport (PHL) and Northeast Philadelphia Airport (PNE), mapped to the City of Philadelphia `Director, Commercial Data Management & Analysis - Department of Aviation` capability framework.
 
-This is a public-source commercial analytics prototype. It uses public PHL/PNE, City, FAA, BTS, and PhilaUI references as evidence, labels non-public operating details as illustrative models, and demonstrates how a City-friendly executive dashboard could organize commercial data, governance, agreements, adoption, and report exports.
+This is a public-source commercial analytics prototype. It uses public PHL/PNE, City, FAA, and BTS references as evidence, labels non-public operating details as illustrative models, and demonstrates how a City-friendly executive dashboard could organize commercial data, governance, agreements, template-based metadata intake, adoption, predictive refresh signals, and report exports.
 
 Deployed prototype: [phl-pne-commercial-ops-dashboard-three.vercel.app](https://phl-pne-commercial-ops-dashboard-three.vercel.app/)
 
@@ -32,8 +32,10 @@ Deployed prototype: [phl-pne-commercial-ops-dashboard-three.vercel.app](https://
 - Portfolio analytics across parking, ground transportation, concessions, advertising, property development, terminal leases, ground leases, air cargo, gates, airline schedules, and aviation activity.
 - Stakeholder enablement through a first-90-days roadmap, training/adoption items, and IT/ETL partnership backlog.
 - Responsible AI framing where AI-assisted analysis supports summarization and anomaly prompts without replacing source validation.
-- City-friendly UI/UX direction guided by [PhilaUI](https://ui.phila.gov/) and the [CityOfPhiladelphia/phila-ui](https://github.com/CityOfPhiladelphia/phila-ui) standards/components reference.
+- City-friendly UI/UX direction guided by [PhilaUI](https://ui.phila.gov/) and the [CityOfPhiladelphia/phila-ui](https://github.com/CityOfPhiladelphia/phila-ui) standards/components reference, now presented as a small footer reference rather than a primary evidence source.
 - Client-side CSV, JSON, and Markdown downloads for PHL, PNE, cockpit, revenue, agreement governance, roadmap, and evidence-chain reports.
+- Workstream template upload for CSV/JSON files so department, unit, or group templates can preserve local columns while feeding centralized metadata reporting.
+- Illustrative machine-learning readiness prediction that re-scores uploaded template coverage, confidence, custom fields, and executive remediation focus after each upload/refresh.
 
 ## How This Maps To The Posting
 
@@ -54,29 +56,27 @@ The posting is used as the explicit capability framework, not as the product ide
 
 The app uses a repeatable evidence chain:
 
-`Posting requirement -> Public source fact -> Citation -> Trend signal -> Commercial analytics question -> Internal data needed -> Dashboard/reporting artifact -> Decision or operational improvement supported`
+`Posting requirement -> Public source fact -> Citation -> Trend signal -> Template upload / refresh -> Predictive readiness signal -> Commercial analytics question -> Internal data needed -> Dashboard/reporting artifact -> Decision or operational improvement supported`
 
 Example: PHL public facts show more than 30M 2025 passengers, 126 gates, 16,126 parking spaces, 449,761 square feet of cargo space, 28 carriers, 134 nonstop destinations, January 2026 passenger/cargo/activity figures, and a $1.8B PHL/PNE capital program. The dashboard converts those facts into commercial questions about parking yield, concessions coverage, advertising inventory, cargo facility use, gate/schedule utilization, and data pipeline priorities.
 
-PNE is treated as a distinct commercial asset portfolio. Public sources describe PNE as Pennsylvania's third busiest airport with on-call Customs, Immigration, and USDA services and approximately 215 based aircraft; PHL Fast Facts also lists PNE hangar inventory, January 2026 movements, and active capital projects. The dashboard translates that into hangar, tenant, ground lease, and development-agreement governance needs.
+PNE is treated as a distinct commercial asset portfolio. The PNE public page describes 1,150 acres, Pennsylvania's third busiest airport status, on-call Customs/Immigration/USDA services, and approximately 215 based aircraft. Current PHL Fast Facts lists 1,118 acres, approximately 167 based aircraft, 85 T-hangars, nine corporate hangars, six open hangars, 8,910 January 2026 movements, and active capital projects. The dashboard treats that public-source difference as a data-governance signal before translating PNE into hangar, tenant, ground lease, and development-agreement reporting needs.
 
 ## Data Used
 
 | Data category | Used for | Provenance |
 | --- | --- | --- |
 | City of Philadelphia posting | Capability framework for Commercial BI, data governance, agreements, adoption, IT partnership, and AI-assisted analysis | Public Source |
-| PhilaUI docs and open-source repo | City-style civic interface direction and replication path | Public Source |
 | PHL annual reports, Fast Facts, statistical information, and airport pages | Passenger/activity context, gates, parking, cargo, carrier/destination, capital program, and commercial portfolio narrative | Public Source |
 | PNE public airport profile and Fast Facts | Reliever-airport context, based-aircraft context, hangar inventory, tenant/hangar/ground-lease lens | Public Source |
 | City open contract data | Public procurement and agreement-discovery starting point | Public Source |
 | FAA passenger/cargo data and BTS on-time data | Passenger, cargo, schedule, reliability, and aviation-activity context | Public Source |
 | Revenue vertical visibility, agreement completeness, internal feed readiness, and BI adoption | Illustrative model of internal commercial data to request and govern | Illustrative Model |
+| Team-owned uploaded templates, custom columns, qualitative notes, morale/satisfaction fields, and metadata classifications | Centralized reporting intake while preserving current unit workflows | Illustrative Model |
 | Public observations converted into business questions and recommendations | Inference layer connecting public evidence to strategic action | Derived From Public |
 
 Public anchors are linked in the app footer:
 
-- [PhilaUI Docs](https://ui.phila.gov/)
-- [CityOfPhiladelphia/phila-ui](https://github.com/CityOfPhiladelphia/phila-ui)
 - [City of Philadelphia posting](https://jobs.smartrecruiters.com/CityofPhiladelphia/744000124935537--director-commercial-data-management-analysis-department-of-aviation-)
 - [PHL Annual Reports](https://www.phl.org/business/reports/annual-report)
 - [PHL Fast Facts](https://www.phl.org/about/news/fast-facts)
@@ -96,6 +96,8 @@ The dashboard is organized around four views:
 - **Lease & Agreement Governance**: agreement completeness, modeled value, managing unit, compliance flags, renewal/action needs, and standardized agreement register model.
 - **Data Strategy Roadmap**: source inventory, clickable data-asset drilldowns, Commercial staff adoption details, IT/data partnership needs, AI-assisted analysis guardrails, visual 90-day roadmap, and strategy choices.
 - **Downloadable Reports**: client-side CSV, JSON, and Markdown exports for airport-level and module-level executive review.
+- **Template Metadata Intake**: CSV/JSON upload path for team-owned report templates. Added fields are classified as mapped or custom and as qualitative or quantitative.
+- **Predictive Refresh Layer**: illustrative ML readiness scoring that updates when a workstream template is uploaded or refreshed.
 
 ## Codebase Walkthrough
 
@@ -110,9 +112,9 @@ Inline comments are included where they clarify the data model, provenance bound
 
 The app uses three labels:
 
-- `Public Source`: directly available public information such as the posting, PHL/PNE pages, City data, FAA, and BTS.
+- `Public Source`: directly available public information such as the posting, PHL/PNE pages, City data, FAA, and BTS. These sources anchor the context and citations, but they are not substitutes for unit-owned operating records.
 - `Derived From Public`: analytical inference from public facts, such as turning passenger scale into a commercial BI question.
-- `Illustrative Model`: realistic internal operating data that is not publicly available, such as lease completeness, parking yield opportunity, feed readiness, and BI adoption progress.
+- `Illustrative Model`: realistic internal operating data or workflow metadata that is not publicly available, such as lease completeness, parking yield opportunity, feed readiness, BI adoption progress, staff morale, role friction, satisfaction notes, or custom template fields. The intent is for teams to keep their workflow templates while a centralized system captures metadata for executive decision-making.
 
 ## Run Locally
 
@@ -135,9 +137,33 @@ pnpm build
 
 ## Prototype Status
 
-This is prototype v1.3. It is not a production BI deployment and does not connect to live airport, parking, lease, contract, concessions, gate, cargo, or aviation systems. Internal operational metrics are intentionally marked as illustrative models until real feeds are available.
+This is prototype v1.4. It is not a production BI deployment and does not connect to live airport, parking, lease, contract, concessions, gate, cargo, or aviation systems. Internal operational metrics, uploaded template parsing, and predictive readiness scoring are intentionally marked as illustrative models until real feeds and approved models are available.
 
 ## Changelog
+
+### v1.4 - Template intake, metadata provenance, and predictive refresh layer
+
+Added:
+
+- Workstream template upload area for CSV/JSON files with mapped/custom field detection and qualitative/quantitative classification.
+- Illustrative ML readiness prediction that updates after uploaded template refreshes.
+- BI Maturity Path narrative and upload control for template-driven prediction.
+- Provenance explainer clarifying `Public Source`, `Illustrative Model`, and decision metadata.
+- Evidence-chain predictive refresh note.
+- PNE evidence chain now shows both the PNE public profile and current PHL Fast Facts when their acreage and based-aircraft figures differ.
+- Filter description text explaining airport, period, and status filters.
+- Capability Risk Map score display as `Score` and `current/100`.
+
+Changed:
+
+- Moved the PhilaUI reference into a smaller centered footer-style note.
+- Removed the top service-bar phrase `PhilaUI-aligned civic interface pattern`; the bar now reads only City of Philadelphia / Department of Aviation.
+- Colored Action and Watch filter icons red and yellow.
+- Updated README to explain centralized metadata intake, team-owned templates, and qualitative executive context such as morale and satisfaction.
+
+Removed:
+
+- PhilaUI references from the main evidence source library so they do not compete with data/citation sources.
 
 ### v1.3 - City-standard UX, reporting, and executive strategy depth
 

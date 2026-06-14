@@ -21,20 +21,6 @@ import type {
 // derived inference, or illustrative internal model.
 export const sourceReferences: SourceReference[] = [
   {
-    label: "PhilaUI Docs",
-    url: "https://ui.phila.gov/",
-    kind: "Public Source",
-    useCase:
-      "City application standards reference for civic UI patterns, accessible controls, and repeatable public-sector interface structure.",
-  },
-  {
-    label: "PhilaUI GitHub",
-    url: "https://github.com/CityOfPhiladelphia/phila-ui",
-    kind: "Public Source",
-    useCase:
-      "Open-source City of Philadelphia Vue application standards/components reference used to guide this React prototype toward a replicable City pattern.",
-  },
-  {
     label: "City of Philadelphia Posting",
     url: "https://jobs.smartrecruiters.com/CityofPhiladelphia/744000124935537--director-commercial-data-management-analysis-department-of-aviation-",
     kind: "Public Source",
@@ -116,9 +102,9 @@ export const airportProfiles: AirportProfile[] = [
     focus:
       "Executive lens for corporate aviation demand, based aircraft, hangar inventory, ground leases, development agreements, tenant portfolio, capital work, and FBO coordination.",
     publicFacts: [
-      "Public profile: 1,150 acres and Pennsylvania's third busiest airport",
-      "Public profile: on-call Customs, Immigration, and USDA services",
-      "Public profile: approximately 215 based aircraft",
+      "PNE page: 1,150 acres, Pennsylvania's third busiest airport, and on-call federal services",
+      "Fast Facts: 1,118 acres, approximately 167 based aircraft, and 8,910 Jan. 2026 movements",
+      "PNE page: airport averages 215 based aircraft",
       "Fast Facts: 85 T-hangars, 9 corporate hangars, and 6 open hangars",
     ],
     source: "Public Source",
@@ -837,16 +823,19 @@ export const insightItems: InsightItem[] = [
     title: "PNE needs a distinct commercial asset lens",
     postingRequirement: "Manage property development, ground leases, development agreements, and tenant lease agreements at PNE.",
     publicObservation:
-      "PNE's public profile identifies 1,150 acres, Pennsylvania's third busiest airport status, and approximately 215 based aircraft.",
+      "PNE's public profile lists 1,150 acres and about 215 based aircraft, while current Fast Facts lists 1,118 acres and about 167 based aircraft.",
     businessQuestion: "Which hangar, ground lease, and development assets are rate-constrained or renewal-constrained?",
-    internalDataNeeded: "Tenant roster, parcel map, hangar inventory, waitlist, lease terms, and rate schedule.",
+    internalDataNeeded: "Authoritative parcel acreage, based-aircraft count, tenant roster, hangar inventory, waitlist, lease terms, and rate schedule.",
     dashboardArtifact: "PNE tenant and asset register with hangar, parcel, renewal, and rate fields.",
     decisionSupported: "Prioritize PNE lease cleanup and development-agreement reviews.",
-    recommendation: "Stand up a PNE tenant and asset register with renewal risk and opportunity flags.",
+    recommendation: "Reconcile public PNE reference data, then stand up a tenant and asset register with renewal risk and opportunity flags.",
     citationLabel: "Northeast Philadelphia Airport public profile",
     citationUrl: "https://www.phl.org/PNE",
     citationDate: "Current public profile",
-    trendSignal: "Based-aircraft and reliever-airport context support a separate PNE asset trend instead of blending it into PHL passenger scale.",
+    secondaryCitationLabel: "PHL Fast Facts",
+    secondaryCitationUrl: "https://www.phl.org/about/news/fast-facts",
+    secondaryCitationDate: "January 2026 Fast Facts",
+    trendSignal: "Conflicting acreage and based-aircraft figures are an early data-governance issue before hangar, tenant, and development decisions are modeled.",
     status: "warning",
     source: "Derived From Public",
   },

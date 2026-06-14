@@ -116,6 +116,9 @@ export interface InsightItem {
   citationLabel: string;
   citationUrl: string;
   citationDate: string;
+  secondaryCitationLabel?: string;
+  secondaryCitationUrl?: string;
+  secondaryCitationDate?: string;
   trendSignal: string;
   status: StatusKind;
   source: SourceKind;
