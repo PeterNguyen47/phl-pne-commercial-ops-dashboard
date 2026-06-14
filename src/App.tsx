@@ -161,10 +161,14 @@ function TrendMark({ metric }: { metric: KpiMetric }) {
 }
 
 function filterByAirport<T extends { airport: AirportCode }>(items: T[], selectedAirport: AirportCode) {
+  // "ALL" records are shared portfolio records, so they should remain visible
+  // when either airport is selected.
   return items.filter((item) => airportMatches(item.airport, selectedAirport));
 }
 
 function filterBySeverity<T>(items: T[], severity: SeverityFilter, getStatus: (item: T) => StatusKind) {
+  // The same severity filter is reused across verticals, agreements, assets,
+  // insights, and decisions to keep the dashboard behavior consistent.
   if (severity === "all") {
     return items;
   }
@@ -173,6 +177,8 @@ function filterBySeverity<T>(items: T[], severity: SeverityFilter, getStatus: (i
 }
 
 function getChartData(period: PeriodKey, selectedAirport: AirportCode) {
+  // Chart fixtures store PHL and PNE opportunity separately; this transform
+  // derives the combined portfolio value only when the user is viewing both.
   return trendData[period].map((point) => {
     const opportunity =
       selectedAirport === "PHL"
@@ -195,6 +201,8 @@ function App() {
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
   const isCompact = useCompactViewport();
 
+  // All scoped collections are memoized from the same filter state so cards,
+  // charts, and worklists always tell the same airport/status story.
   const scopedKpis = useMemo(
     () => filterByAirport(executiveKpis[selectedPeriod], selectedAirport),
     [selectedAirport, selectedPeriod],
@@ -240,7 +248,7 @@ function App() {
             <p className="eyebrow">Philadelphia Department of Aviation commercial analytics</p>
             <h1>Commercial Data Management & Analysis Dashboard</h1>
             <p className="hero-copy">
-              Public-first BI prototype for organizing Commercial Division data across PHL and PNE.
+              Interview resource mapped to the Commercial Data Management & Analysis responsibilities for PHL and PNE.
             </p>
           </div>
         </div>
@@ -344,7 +352,7 @@ function App() {
       <footer className="source-library">
         <div>
           <p className="eyebrow">Public Evidence Library</p>
-          <h2>Sources connected to commercial BI questions</h2>
+          <h2>Sources supporting the posting-to-BI evidence chain</h2>
         </div>
         <div className="source-links">
           {sourceReferences.map((source) => (
@@ -493,7 +501,11 @@ function CommercialBiCockpit({
         </article>
 
         <article className="panel">
-          <PanelHeading icon={Target} title="Capability Alignment" meta="Dashboard modules mapped to Commercial Division data duties" />
+          <PanelHeading
+            icon={Target}
+            title="Role Capability Map"
+            meta="Posting responsibilities mapped to dashboard modules"
+          />
           <div className="capability-list">
             {capabilityAlignment.map((item) => (
               <div className="capability-row" key={item.responsibility}>
@@ -858,7 +870,7 @@ function InsightPanel({ insights }: { insights: InsightItem[] }) {
   if (insights.length === 0) {
     return (
       <article className="panel">
-        <PanelHeading icon={FileText} title="Public Information Story" meta="No matching insights for current filters" />
+        <PanelHeading icon={FileText} title="Evidence Chain" meta="No matching insights for current filters" />
         <div className="empty-state">No matching public-source insights.</div>
       </article>
     );
@@ -866,7 +878,11 @@ function InsightPanel({ insights }: { insights: InsightItem[] }) {
 
   return (
     <article className="panel">
-      <PanelHeading icon={FileText} title="Public Information Story" meta="Observation, internal data request, executive action" />
+      <PanelHeading
+        icon={FileText}
+        title="Evidence Chain"
+        meta="Posting requirement, public fact, internal data request, artifact, decision"
+      />
       <div className="insight-list">
         {insights.map((insight) => (
           <div className="insight-row" key={insight.id}>
@@ -876,13 +892,22 @@ function InsightPanel({ insights }: { insights: InsightItem[] }) {
                 {insight.title} <span>{insight.airport}</span>
               </div>
               <p>
-                <strong>Public evidence:</strong> {insight.publicObservation}
+                <strong>Posting requirement:</strong> {insight.postingRequirement}
               </p>
               <p>
-                <strong>Business question:</strong> {insight.businessQuestion}
+                <strong>Public source fact:</strong> {insight.publicObservation}
               </p>
               <p>
-                <strong>Day 1 data request:</strong> {insight.internalDataNeeded}
+                <strong>Commercial analytics question:</strong> {insight.businessQuestion}
+              </p>
+              <p>
+                <strong>Internal data needed:</strong> {insight.internalDataNeeded}
+              </p>
+              <p>
+                <strong>Dashboard artifact:</strong> {insight.dashboardArtifact}
+              </p>
+              <p>
+                <strong>Decision supported:</strong> {insight.decisionSupported}
               </p>
               <p>
                 <strong>Recommendation:</strong> {insight.recommendation}

@@ -100,9 +100,12 @@ export interface InsightItem {
   id: string;
   airport: AirportCode;
   title: string;
+  postingRequirement: string;
   publicObservation: string;
   businessQuestion: string;
   internalDataNeeded: string;
+  dashboardArtifact: string;
+  decisionSupported: string;
   recommendation: string;
   status: StatusKind;
   source: SourceKind;

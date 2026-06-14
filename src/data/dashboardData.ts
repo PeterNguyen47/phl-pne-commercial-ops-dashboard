@@ -16,12 +16,29 @@ import type {
   TrendPoint,
 } from "../types/dashboard";
 
+// Source references are intentionally separated from dashboard metrics so every
+// visible claim can point back to a provenance category: public source,
+// derived inference, or illustrative internal model.
 export const sourceReferences: SourceReference[] = [
+  {
+    label: "City of Philadelphia Posting",
+    url: "https://jobs.smartrecruiters.com/CityofPhiladelphia/744000124935537--director-commercial-data-management-analysis-department-of-aviation-",
+    kind: "Public Source",
+    useCase:
+      "Capability framework for Commercial BI, dashboards, strategic recommendations, lease/agreement governance, training, IT partnership, and AI-assisted analysis.",
+  },
   {
     label: "PHL Annual Reports",
     url: "https://www.phl.org/business/reports/annual-report",
     kind: "Public Source",
     useCase: "Public airport performance context and commercial operating narrative.",
+  },
+  {
+    label: "PHL Fast Facts",
+    url: "https://www.phl.org/about/news/fast-facts",
+    kind: "Public Source",
+    useCase:
+      "Current PHL/PNE public facts for passengers, gates, parking spaces, cargo space, carriers, destinations, January 2026 activity, and capital program context.",
   },
   {
     label: "PHL Statistical Information",
@@ -61,6 +78,8 @@ export const sourceReferences: SourceReference[] = [
   },
 ];
 
+// Airport profiles use public facts only. Any operational metrics that would
+// require internal systems remain in separate illustrative model records.
 export const airportProfiles: AirportProfile[] = [
   {
     code: "PHL",
@@ -69,10 +88,10 @@ export const airportProfiles: AirportProfile[] = [
     focus:
       "Passenger scale, parking, ground transportation, concessions, advertising, air cargo, gates, airline schedules, and terminal agreements.",
     publicFacts: [
-      "Major airport for the Philadelphia metropolitan area",
-      "Public reporting supports passenger, activity, and commercial context",
-      "Commercial portfolio includes terminal-facing and aviation-adjacent revenue streams",
-      "Public aviation data can frame gate, schedule, cargo, and reliability questions",
+      "2025 annual report: more than 30M passengers",
+      "Fast Facts: 126 gates and 16,126 public parking spaces",
+      "Fast Facts: 449,761 sq ft of cargo space",
+      "Fast Facts: 28 carriers and 134 nonstop destinations as of Dec. 2025",
     ],
     source: "Public Source",
   },
@@ -83,15 +102,18 @@ export const airportProfiles: AirportProfile[] = [
     focus:
       "Corporate aviation, based aircraft, hangars, ground leases, development agreements, tenant portfolio, and FBO coordination.",
     publicFacts: [
-      "Publicly described as a reliever airport for the region",
-      "General aviation demand creates lease, hangar, and tenant-management questions",
-      "PNE is part of the Department of Aviation portfolio, not a side note",
-      "Public profile supports a distinct commercial-management lens",
+      "Public profile: 1,150 acres and Pennsylvania's third busiest airport",
+      "Public profile: on-call Customs, Immigration, and USDA services",
+      "Public profile: approximately 215 based aircraft",
+      "Fast Facts: 85 T-hangars, 9 corporate hangars, and 6 open hangars",
     ],
     source: "Public Source",
   },
 ];
 
+// KPI values mix public portfolio scope with illustrative readiness measures.
+// This keeps the prototype honest: public facts frame the problem, while
+// non-public operational maturity metrics are labeled as models.
 export const executiveKpis: Record<PeriodKey, KpiMetric[]> = {
   today: [
     {
@@ -408,31 +430,43 @@ export const capabilityAlignment = [
   {
     responsibility: "Business intelligence and analytics",
     dashboardModule: "Commercial BI Cockpit",
-    proofPoint: "Turns public airport context into KPI, risk, and action views.",
+    proofPoint: "Turns public airport context into KPI, risk, evidence-chain, and action views.",
     source: "Public Source" as const,
   },
   {
-    responsibility: "Data hygiene and governance",
-    dashboardModule: "Data Strategy Roadmap",
-    proofPoint: "Tracks source ownership, quality status, cadence, and internal data needed.",
-    source: "Illustrative Model" as const,
+    responsibility: "Dashboards and reporting tools",
+    dashboardModule: "Commercial BI Cockpit",
+    proofPoint: "Shows how portfolio KPIs, verticals, agreements, and adoption can become a recurring BI product.",
+    source: "Public Source" as const,
   },
   {
-    responsibility: "Lease and agreement organization",
+    responsibility: "Strategic recommendations and operational improvements",
+    dashboardModule: "Revenue Verticals",
+    proofPoint: "Connects each public signal to a commercial question, internal data request, and recommended action.",
+    source: "Public Source" as const,
+  },
+  {
+    responsibility: "Lease/agreement storage, retrieval, expirations, compliance, and tenant reporting",
     dashboardModule: "Lease & Agreement Governance",
     proofPoint: "Models agreement completeness, renewal exposure, and compliance flags.",
     source: "Illustrative Model" as const,
   },
   {
-    responsibility: "Commercial staff training",
+    responsibility: "Staff training and tool adoption",
     dashboardModule: "Data Strategy Roadmap",
     proofPoint: "Defines adoption milestones for analysts, managers, procurement, and airport leadership.",
     source: "Illustrative Model" as const,
   },
   {
-    responsibility: "IT and data pipeline partnership",
-    dashboardModule: "Commercial BI Cockpit",
+    responsibility: "ETL/data warehouse partnership with IT",
+    dashboardModule: "Data Strategy Roadmap",
     proofPoint: "Separates public anchors from system feeds that would need warehouse or ETL support.",
+    source: "Illustrative Model" as const,
+  },
+  {
+    responsibility: "Cross-departmental data governance",
+    dashboardModule: "Data Strategy Roadmap",
+    proofPoint: "Tracks source owners, refresh cadence, quality status, access status, and commercial use case.",
     source: "Illustrative Model" as const,
   },
   {
@@ -443,12 +477,15 @@ export const capabilityAlignment = [
   },
 ];
 
+// Commercial vertical fixtures convert public signals into a portfolio backlog.
+// The opportunity values are illustrative until actual parking, lease, tenant,
+// gate, cargo, and concessions systems are connected.
 export const commercialVerticals: CommercialVerticalMetric[] = [
   {
     id: "parking",
     airport: "PHL",
     vertical: "Parking",
-    publicSignal: "PHL public materials identify parking as a major passenger-facing commercial service.",
+    publicSignal: "PHL Fast Facts lists 16,126 parking spaces across garage, short-term, and economy products.",
     currentVisibility: 82,
     opportunity: "$3.2M modeled yield and leakage opportunity",
     internalDataNeeded: "Occupancy, transactions, pre-booking, refunds, channel mix, and exception logs.",
@@ -460,7 +497,7 @@ export const commercialVerticals: CommercialVerticalMetric[] = [
     id: "ground-transport",
     airport: "PHL",
     vertical: "Ground Transportation",
-    publicSignal: "Ground transportation is part of the Commercial Division portfolio.",
+    publicSignal: "The posting names ground transportation as a Commercial Division portfolio area.",
     currentVisibility: 54,
     opportunity: "$1.1M modeled permit, fee, and curb-allocation upside",
     internalDataNeeded: "Trip counts, concession fees, curb dwell, permits, operator compliance, and complaints.",
@@ -472,7 +509,7 @@ export const commercialVerticals: CommercialVerticalMetric[] = [
     id: "concessions",
     airport: "PHL",
     vertical: "Concessions",
-    publicSignal: "Passenger and schedule trends can frame concessions demand and terminal planning questions.",
+    publicSignal: "PHL reported more than 30M passengers in 2025, supporting concessions demand analysis.",
     currentVisibility: 68,
     opportunity: "$1.7M modeled sales-per-enplanement upside",
     internalDataNeeded: "Sales, rent, hours, category mix, location, enplanements by terminal, and lease terms.",
@@ -484,7 +521,7 @@ export const commercialVerticals: CommercialVerticalMetric[] = [
     id: "advertising",
     airport: "PHL",
     vertical: "Advertising",
-    publicSignal: "Advertising performance depends on passenger-flow context and terminal asset inventory.",
+    publicSignal: "PHL's passenger scale and seven-terminal footprint can frame advertising inventory questions.",
     currentVisibility: 47,
     opportunity: "$620K modeled inventory-pricing opportunity",
     internalDataNeeded: "Asset inventory, rate card, occupancy, campaign performance, and terminal footfall.",
@@ -496,7 +533,7 @@ export const commercialVerticals: CommercialVerticalMetric[] = [
     id: "cargo",
     airport: "PHL",
     vertical: "Air Cargo",
-    publicSignal: "FAA cargo statistics can anchor cargo trend analysis for commercial planning.",
+    publicSignal: "PHL Fast Facts reports 449,761 sq ft of cargo space and January 2026 cargo activity.",
     currentVisibility: 63,
     opportunity: "$900K modeled throughput and facility-utilization opportunity",
     internalDataNeeded: "Cargo tonnage, tenant activity, facility leases, apron constraints, and rate schedules.",
@@ -508,7 +545,7 @@ export const commercialVerticals: CommercialVerticalMetric[] = [
     id: "gate-utilization",
     airport: "PHL",
     vertical: "Gate Utilization",
-    publicSignal: "Gate utilization and airline schedules are core inputs for terminal commercial planning.",
+    publicSignal: "PHL Fast Facts lists 126 gates, 28 carriers, 134 nonstop destinations, and 400 average daily departures.",
     currentVisibility: 59,
     opportunity: "$1.4M modeled airline scheduling and facility-use opportunity",
     internalDataNeeded: "Gate assignments, airline schedule, RON activity, common-use rules, and utilization fees.",
@@ -520,7 +557,7 @@ export const commercialVerticals: CommercialVerticalMetric[] = [
     id: "pne-hangars",
     airport: "PNE",
     vertical: "Terminal Leases",
-    publicSignal: "PNE public context supports a general aviation tenant and hangar portfolio lens.",
+    publicSignal: "PNE Fast Facts lists 85 T-hangars, 9 corporate hangars, 6 open hangars, and January 2026 movements.",
     currentVisibility: 56,
     opportunity: "$740K modeled hangar and tenant-rate opportunity",
     internalDataNeeded: "Hangar inventory, tenant roster, rates, waitlist, renewal dates, and maintenance status.",
@@ -532,7 +569,7 @@ export const commercialVerticals: CommercialVerticalMetric[] = [
     id: "pne-development",
     airport: "PNE",
     vertical: "Property Development",
-    publicSignal: "Property development and ground leases are part of the commercial portfolio.",
+    publicSignal: "PNE public profile and capital projects support a reliever-airport property development lens.",
     currentVisibility: 51,
     opportunity: "$1.0M modeled development and ground-lease opportunity",
     internalDataNeeded: "Parcel inventory, lease terms, tenant status, development pipeline, and restrictions.",
@@ -542,6 +579,9 @@ export const commercialVerticals: CommercialVerticalMetric[] = [
   },
 ];
 
+// Agreement records are illustrative because lease terms, amendments, and
+// tenant performance are not public system feeds. The structure shows the
+// fields a real Commercial agreement register would need.
 export const agreementRecords: AgreementRecord[] = [
   {
     id: "agreement-1",
@@ -619,9 +659,20 @@ export const agreementRecords: AgreementRecord[] = [
 
 export const dataAssets: DataAsset[] = [
   {
+    id: "asset-0",
+    airport: "ALL",
+    sourceName: "Commercial data management posting",
+    owner: "City of Philadelphia public posting",
+    refreshCadence: "Posting-specific",
+    qualityStatus: "normal",
+    accessStatus: "Public web",
+    commercialUseCase: "Defines the capability framework this interview resource maps into working dashboard modules.",
+    source: "Public Source",
+  },
+  {
     id: "asset-1",
     airport: "ALL",
-    sourceName: "PHL annual and statistical reports",
+    sourceName: "PHL annual, fast facts, and statistical reports",
     owner: "Public affairs / finance",
     refreshCadence: "Annual / periodic",
     qualityStatus: "normal",
@@ -686,14 +737,19 @@ export const dataAssets: DataAsset[] = [
   },
 ];
 
+// Insight items are the interview evidence chain: requirement -> public fact ->
+// analytics question -> internal data needed -> artifact -> decision supported.
 export const insightItems: InsightItem[] = [
   {
     id: "insight-1",
     airport: "PHL",
     title: "Passenger scale should anchor non-airline revenue analysis",
-    publicObservation: "PHL public reports and statistics provide passenger and activity context.",
+    postingRequirement: "Develop business intelligence across parking, ground transportation, concessions, and advertising.",
+    publicObservation: "PHL's 2025 annual report says the airport welcomed more than 30M passengers.",
     businessQuestion: "Which parking, concessions, advertising, and ground-transport products are underperforming against passenger demand?",
     internalDataNeeded: "Transaction, sales, rate, fee, and location data by terminal and time period.",
+    dashboardArtifact: "Passenger-to-revenue bridge with product, terminal, and period filters.",
+    decisionSupported: "Prioritize the highest-value non-airline revenue feed for production BI.",
     recommendation: "Build a passenger-to-revenue bridge for the Commercial Division portfolio.",
     status: "warning",
     source: "Derived From Public",
@@ -702,9 +758,12 @@ export const insightItems: InsightItem[] = [
     id: "insight-2",
     airport: "PHL",
     title: "Gate and schedule activity can shape commercial planning",
-    publicObservation: "Gate utilization and airline schedules connect aviation activity to terminal commercial planning.",
+    postingRequirement: "Analyze gate utilization, airline schedules, and aviation activity trends.",
+    publicObservation: "PHL Fast Facts lists 126 gates, 28 carriers, 134 nonstop destinations, and 400 average daily departures.",
     businessQuestion: "How do airline schedules, gates, and terminal activity affect concessions coverage and facility-use revenue?",
     internalDataNeeded: "Gate assignment, schedule, common-use, concessions location, and lease data.",
+    dashboardArtifact: "Gate/schedule utilization layer connected to concessions and terminal lease views.",
+    decisionSupported: "Identify schedule-driven commercial coverage gaps before peak travel periods.",
     recommendation: "Create a gate/schedule utilization layer for terminal commercial planning.",
     status: "critical",
     source: "Public Source",
@@ -713,9 +772,13 @@ export const insightItems: InsightItem[] = [
     id: "insight-3",
     airport: "PNE",
     title: "PNE needs a distinct commercial asset lens",
-    publicObservation: "PNE is a general aviation reliever airport with tenant, hangar, and development relevance.",
+    postingRequirement: "Manage property development, ground leases, development agreements, and tenant lease agreements at PNE.",
+    publicObservation:
+      "PNE's public profile identifies 1,150 acres, Pennsylvania's third busiest airport status, and approximately 215 based aircraft.",
     businessQuestion: "Which hangar, ground lease, and development assets are rate-constrained or renewal-constrained?",
     internalDataNeeded: "Tenant roster, parcel map, hangar inventory, waitlist, lease terms, and rate schedule.",
+    dashboardArtifact: "PNE tenant and asset register with hangar, parcel, renewal, and rate fields.",
+    decisionSupported: "Prioritize PNE lease cleanup and development-agreement reviews.",
     recommendation: "Stand up a PNE tenant and asset register with renewal risk and opportunity flags.",
     status: "warning",
     source: "Derived From Public",
@@ -724,10 +787,29 @@ export const insightItems: InsightItem[] = [
     id: "insight-4",
     airport: "ALL",
     title: "Public contracts can seed a governance backlog",
+    postingRequirement:
+      "Improve lease/agreement storage, retrieval, expiration tracking, compliance reporting, and tenant relationship reporting.",
     publicObservation: "City open contract data exposes public procurement and agreement context.",
     businessQuestion: "Which commercial agreements need renewal tracking, data normalization, or executive review?",
     internalDataNeeded: "Full contract repository, amendments, vendor master, SLA terms, and responsible owner.",
+    dashboardArtifact: "Agreement governance register with completeness, expiration, compliance flag, owner, and action.",
+    decisionSupported: "Set the minimum viable agreement taxonomy and assign data stewards.",
     recommendation: "Use public contract discovery to start an internal commercial agreement taxonomy.",
+    status: "warning",
+    source: "Derived From Public",
+  },
+  {
+    id: "insight-5",
+    airport: "ALL",
+    title: "BI delivery needs adoption and IT partnership",
+    postingRequirement:
+      "Partner with IT on ETL/data warehouse needs, train staff, and explore AI-assisted analysis with governance.",
+    publicObservation: "PHL and PNE are advancing a $1.8B capital program, increasing the need for trusted portfolio reporting.",
+    businessQuestion: "Which data feeds and staff workflows are most important to stabilize before scaling commercial BI?",
+    internalDataNeeded: "System inventory, data owners, refresh cadence, access rights, adoption plan, and AI-use guardrails.",
+    dashboardArtifact: "First-90-days data roadmap with source quality, training, and production-feed prioritization.",
+    decisionSupported: "Approve a governed BI adoption cadence and IT delivery backlog.",
+    recommendation: "Treat the dashboard as a managed operating process, not a one-time report.",
     status: "warning",
     source: "Derived From Public",
   },

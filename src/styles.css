@@ -975,11 +975,14 @@ h2 {
   .alert-row,
   .decision-row,
   .staff-row,
-  .capability-row,
   .insight-row,
   .adoption-row,
   .roadmap-row {
     grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .capability-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .risk-row .source-badge,
@@ -987,9 +990,13 @@ h2 {
   .decision-impact,
   .staff-row .status-pill,
   .adoption-row .status-pill,
-  .roadmap-row .status-pill,
-  .capability-module {
+  .roadmap-row .status-pill {
     grid-column: 2;
+    justify-self: start;
+    text-align: left;
+  }
+
+  .capability-module {
     justify-self: start;
     text-align: left;
   }
