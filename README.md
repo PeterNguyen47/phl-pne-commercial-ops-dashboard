@@ -1,8 +1,10 @@
 # PHL + PNE Commercial Data Management & Analysis Dashboard
 
-Interview resource mapped to the City of Philadelphia `Director, Commercial Data Management & Analysis - Department of Aviation` posting for Philadelphia International Airport (PHL) and Northeast Philadelphia Airport (PNE).
+Commercial analytics prototype for Philadelphia International Airport (PHL) and Northeast Philadelphia Airport (PNE), mapped to the City of Philadelphia `Director, Commercial Data Management & Analysis - Department of Aviation` capability framework.
 
-This is a public-source commercial analytics prototype. It uses the posting as the capability framework, uses public PHL/PNE, City, FAA, and BTS sources as evidence, and labels non-public operating details as illustrative models of the internal data that would need to be requested, governed, and operationalized.
+This is a public-source commercial analytics prototype. It uses public PHL/PNE, City, FAA, BTS, and PhilaUI references as evidence, labels non-public operating details as illustrative models, and demonstrates how a City-friendly executive dashboard could organize commercial data, governance, agreements, adoption, and report exports.
+
+Deployed prototype: [phl-pne-commercial-ops-dashboard-three.vercel.app](https://phl-pne-commercial-ops-dashboard-three.vercel.app/)
 
 ## Prototype Screenshots
 
@@ -13,6 +15,10 @@ This is a public-source commercial analytics prototype. It uses the posting as t
 ### Revenue Verticals
 
 ![Prototype v1 revenue verticals](docs/screenshots/prototype-v1-revenue-verticals-preview.webp)
+
+### Data Strategy Roadmap
+
+![Prototype v1 data strategy roadmap](docs/screenshots/prototype-v1-data-strategy-roadmap-preview.webp)
 
 ### Mobile View
 
@@ -26,6 +32,8 @@ This is a public-source commercial analytics prototype. It uses the posting as t
 - Portfolio analytics across parking, ground transportation, concessions, advertising, property development, terminal leases, ground leases, air cargo, gates, airline schedules, and aviation activity.
 - Stakeholder enablement through a first-90-days roadmap, training/adoption items, and IT/ETL partnership backlog.
 - Responsible AI framing where AI-assisted analysis supports summarization and anomaly prompts without replacing source validation.
+- City-friendly UI/UX direction guided by [PhilaUI](https://ui.phila.gov/) and the [CityOfPhiladelphia/phila-ui](https://github.com/CityOfPhiladelphia/phila-ui) standards/components reference.
+- Client-side CSV, JSON, and Markdown downloads for PHL, PNE, cockpit, revenue, agreement governance, roadmap, and evidence-chain reports.
 
 ## How This Maps To The Posting
 
@@ -46,7 +54,7 @@ The posting is used as the explicit capability framework, not as the product ide
 
 The app uses a repeatable evidence chain:
 
-`Posting requirement -> Public source fact -> Commercial analytics question -> Internal data needed -> Dashboard/reporting artifact -> Decision or operational improvement supported`
+`Posting requirement -> Public source fact -> Citation -> Trend signal -> Commercial analytics question -> Internal data needed -> Dashboard/reporting artifact -> Decision or operational improvement supported`
 
 Example: PHL public facts show more than 30M 2025 passengers, 126 gates, 16,126 parking spaces, 449,761 square feet of cargo space, 28 carriers, 134 nonstop destinations, January 2026 passenger/cargo/activity figures, and a $1.8B PHL/PNE capital program. The dashboard converts those facts into commercial questions about parking yield, concessions coverage, advertising inventory, cargo facility use, gate/schedule utilization, and data pipeline priorities.
 
@@ -57,6 +65,7 @@ PNE is treated as a distinct commercial asset portfolio. Public sources describe
 | Data category | Used for | Provenance |
 | --- | --- | --- |
 | City of Philadelphia posting | Capability framework for Commercial BI, data governance, agreements, adoption, IT partnership, and AI-assisted analysis | Public Source |
+| PhilaUI docs and open-source repo | City-style civic interface direction and replication path | Public Source |
 | PHL annual reports, Fast Facts, statistical information, and airport pages | Passenger/activity context, gates, parking, cargo, carrier/destination, capital program, and commercial portfolio narrative | Public Source |
 | PNE public airport profile and Fast Facts | Reliever-airport context, based-aircraft context, hangar inventory, tenant/hangar/ground-lease lens | Public Source |
 | City open contract data | Public procurement and agreement-discovery starting point | Public Source |
@@ -66,6 +75,8 @@ PNE is treated as a distinct commercial asset portfolio. Public sources describe
 
 Public anchors are linked in the app footer:
 
+- [PhilaUI Docs](https://ui.phila.gov/)
+- [CityOfPhiladelphia/phila-ui](https://github.com/CityOfPhiladelphia/phila-ui)
 - [City of Philadelphia posting](https://jobs.smartrecruiters.com/CityofPhiladelphia/744000124935537--director-commercial-data-management-analysis-department-of-aviation-)
 - [PHL Annual Reports](https://www.phl.org/business/reports/annual-report)
 - [PHL Fast Facts](https://www.phl.org/about/news/fast-facts)
@@ -82,15 +93,16 @@ The dashboard is organized around four views:
 
 - **Commercial BI Cockpit**: portfolio KPIs, role capability map, data maturity trend, evidence chains, and commercial decision worklist.
 - **Revenue Verticals**: parking, ground transportation, concessions, advertising, cargo, gate utilization, airline schedules, PNE hangars, and development-agreement opportunity views.
-- **Lease & Agreement Governance**: agreement completeness, modeled value, compliance flags, renewal/action needs, and standardized agreement register model.
-- **Data Strategy Roadmap**: source inventory, data-readiness model, Commercial staff adoption, IT/data partnership needs, AI-assisted analysis guardrails, and first-90-days execution plan.
+- **Lease & Agreement Governance**: agreement completeness, modeled value, managing unit, compliance flags, renewal/action needs, and standardized agreement register model.
+- **Data Strategy Roadmap**: source inventory, clickable data-asset drilldowns, Commercial staff adoption details, IT/data partnership needs, AI-assisted analysis guardrails, visual 90-day roadmap, and strategy choices.
+- **Downloadable Reports**: client-side CSV, JSON, and Markdown exports for airport-level and module-level executive review.
 
 ## Codebase Walkthrough
 
 - `src/types/dashboard.ts`: shared TypeScript interfaces for airports, sources, KPIs, commercial verticals, data assets, agreements, evidence-chain insights, adoption items, roadmap items, and decisions.
 - `src/data/dashboardData.ts`: typed local fixtures, source references, current public facts, illustrative internal models, capability map, commercial verticals, agreement records, data assets, insight chains, roadmap, and decision worklist.
-- `src/App.tsx`: dashboard state, filter/derived-metric functions, chart transformations, reusable components, and four tab compositions.
-- `src/styles.css`: responsive executive dashboard styling, card grids, status treatments, provenance badges, charts, tables, and mobile behavior.
+- `src/App.tsx`: dashboard state, filter/derived-metric functions, report serializers, chart transformations, reusable components, and four tab compositions.
+- `src/styles.css`: responsive City-friendly dashboard styling, civic service bar, report cards, status treatments, provenance badges, charts, tables, roadmap visuals, and mobile behavior.
 
 Inline comments are included where they clarify the data model, provenance boundary, filter behavior, derived chart values, and dashboard composition.
 
@@ -123,9 +135,33 @@ pnpm build
 
 ## Prototype Status
 
-This is prototype v1.2. It is not a production BI deployment and does not connect to live airport, parking, lease, contract, concessions, gate, cargo, or aviation systems. Internal operational metrics are intentionally marked as illustrative models until real feeds are available.
+This is prototype v1.3. It is not a production BI deployment and does not connect to live airport, parking, lease, contract, concessions, gate, cargo, or aviation systems. Internal operational metrics are intentionally marked as illustrative models until real feeds are available.
 
 ## Changelog
+
+### v1.3 - City-standard UX, reporting, and executive strategy depth
+
+Added:
+
+- PhilaUI docs and CityOfPhiladelphia/phila-ui repo as public UI standard references.
+- City-style civic service bar, blue/gold accenting, accessible control treatment, and a standards-alignment note explaining the React-to-PhilaUI replication path.
+- Downloadable CSV, JSON, and Markdown reports for PHL, PNE, Commercial BI Cockpit, Revenue Verticals, Lease & Agreement Governance, Data Strategy Roadmap, and Evidence Chain citations.
+- Source citation label, URL, citation date, and trend signal inside each evidence-chain card.
+- Managing unit field in the agreement register model.
+- Data strategy drilldown panel for source assets, including reporting layer, executive question, diagnostic, data nuance, and decision use.
+- Visual first-90-days roadmap with priority, target date, progress, and executive signal.
+- More detailed adoption and strategy-decision fields: target date, enablement task, success measure, risk if skipped, rationale, options, required data, delay risk, and review cadence.
+
+Changed:
+
+- Removed the interview-resource sentence from the dashboard header and replaced it with executive commercial BI framing.
+- Expanded executive descriptions throughout the dashboard to better support decision-making.
+- Reworked Data Strategy from static cards into selectable analysis paths and implementation visuals.
+- Updated README and page metadata for the City-standard/reporting refresh.
+
+Removed:
+
+- Header copy that over-emphasized interview framing instead of the dashboard objective.
 
 ### v1.2 - Explicit posting-aligned interview resource
 

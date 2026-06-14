@@ -8,8 +8,13 @@ import {
   Building2,
   CalendarDays,
   CheckCircle2,
+  ChevronRight,
   Clock3,
+  Database,
+  Download,
   ExternalLink,
+  FileJson,
+  FileSpreadsheet,
   FileText,
   Filter,
   Fuel,
@@ -73,6 +78,16 @@ import type {
 
 type ViewKey = "cockpit" | "revenue" | "agreements" | "roadmap";
 type SeverityFilter = "all" | StatusKind;
+type ReportFormat = "csv" | "json" | "md";
+type ReportRow = Record<string, string | number>;
+
+interface ReportDefinition {
+  id: string;
+  title: string;
+  scope: string;
+  description: string;
+  rows: ReportRow[];
+}
 
 const airportOptions: Array<{ label: string; value: AirportCode; icon: LucideIcon }> = [
   { label: "PHL + PNE", value: "ALL", icon: Building2 },
@@ -117,6 +132,74 @@ function formatCurrency(value: number) {
   }
 
   return `$${Math.round(value / 1000)}K`;
+}
+
+function safeFilename(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function escapeCsvCell(value: string | number) {
+  const text = String(value ?? "");
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function toCsv(rows: ReportRow[]) {
+  if (rows.length === 0) {
+    return "section,name,status,summary\n";
+  }
+
+  const headers = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
+  const body = rows.map((row) => headers.map((header) => escapeCsvCell(row[header] ?? "")).join(","));
+  return [headers.join(","), ...body].join("\n");
+}
+
+function toMarkdown(report: ReportDefinition) {
+  const lines = [`# ${report.title}`, "", report.description, "", `Scope: ${report.scope}`, ""];
+
+  report.rows.forEach((row, index) => {
+    lines.push(`## ${index + 1}. ${row.name ?? row.section ?? "Report item"}`);
+    Object.entries(row).forEach(([key, value]) => {
+      lines.push(`- ${key}: ${value}`);
+    });
+    lines.push("");
+  });
+
+  return lines.join("\n");
+}
+
+function downloadReport(report: ReportDefinition, format: ReportFormat) {
+  const serializers: Record<ReportFormat, { mime: string; extension: string; body: string }> = {
+    csv: {
+      mime: "text/csv;charset=utf-8",
+      extension: "csv",
+      body: toCsv(report.rows),
+    },
+    json: {
+      mime: "application/json;charset=utf-8",
+      extension: "json",
+      body: JSON.stringify({ title: report.title, scope: report.scope, rows: report.rows }, null, 2),
+    },
+    md: {
+      mime: "text/markdown;charset=utf-8",
+      extension: "md",
+      body: toMarkdown(report),
+    },
+  };
+  const serialized = serializers[format];
+  const blob = new Blob([serialized.body], { type: serialized.mime });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `${safeFilename(report.title)}.${serialized.extension}`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function reportRow(section: string, name: string, values: Omit<ReportRow, "section" | "name">): ReportRow {
+  return { section, name, ...values };
 }
 
 function sourceClass(source: SourceKind) {
@@ -194,6 +277,180 @@ function getChartData(period: PeriodKey, selectedAirport: AirportCode) {
   });
 }
 
+function createReportDefinitions(period: PeriodKey): ReportDefinition[] {
+  const kpiRows = executiveKpis[period].map((metric) =>
+    reportRow("KPI", metric.label, {
+      airport: metric.airport,
+      value: metric.value,
+      target: metric.target,
+      status: metric.status,
+      trend: metric.delta,
+      source: metric.source,
+    }),
+  );
+  const verticalRows = commercialVerticals.map((vertical) =>
+    reportRow("Revenue vertical", vertical.vertical, {
+      airport: vertical.airport,
+      visibility: `${vertical.currentVisibility}%`,
+      status: vertical.status,
+      opportunity: vertical.opportunity,
+      internalDataNeeded: vertical.internalDataNeeded,
+      recommendedAction: vertical.recommendedAction,
+      source: vertical.source,
+    }),
+  );
+  const agreementRows = agreementRecords.map((agreement) =>
+    reportRow("Agreement", agreement.tenantOrVendor, {
+      airport: agreement.airport,
+      agreementType: agreement.agreementType,
+      managingUnit: agreement.managingUnit,
+      value: formatCurrency(agreement.value),
+      expiration: agreement.expiration,
+      completeness: `${agreement.completeness}%`,
+      status: agreement.complianceFlag,
+      recommendedAction: agreement.recommendedAction,
+      source: agreement.source,
+    }),
+  );
+  const roadmapRows = roadmapItems.map((item) =>
+    reportRow("Roadmap", item.title, {
+      phase: item.phase,
+      targetDate: item.targetDate,
+      priority: item.priority,
+      progress: `${item.progress}%`,
+      owner: item.owner,
+      executiveSignal: item.executiveSignal,
+      status: item.status,
+      source: item.source,
+    }),
+  );
+  const evidenceRows = insightItems.map((insight) =>
+    reportRow("Evidence chain", insight.title, {
+      airport: insight.airport,
+      citation: insight.citationLabel,
+      citationDate: insight.citationDate,
+      trendSignal: insight.trendSignal,
+      businessQuestion: insight.businessQuestion,
+      internalDataNeeded: insight.internalDataNeeded,
+      decisionSupported: insight.decisionSupported,
+      source: insight.source,
+    }),
+  );
+  const assetRows = dataAssets.map((asset) =>
+    reportRow("Data asset", asset.sourceName, {
+      airport: asset.airport,
+      owner: asset.owner,
+      accessStatus: asset.accessStatus,
+      qualityStatus: asset.qualityStatus,
+      reportingLayer: asset.reportingLayer,
+      executiveQuestion: asset.executiveQuestion,
+      decisionUse: asset.decisionUse,
+      source: asset.source,
+    }),
+  );
+  const decisionRows = decisionItems.map((decision) =>
+    reportRow("Decision", decision.title, {
+      airport: decision.airport,
+      domain: decision.domain,
+      dueDate: decision.dueDate,
+      owner: decision.owner,
+      status: decision.status,
+      severity: decision.severity,
+      impact: decision.impact,
+      recommendation: decision.recommendation,
+      dataRequired: decision.dataRequired,
+      riskOfDelay: decision.riskOfDelay,
+      source: decision.source,
+    }),
+  );
+
+  return [
+    {
+      id: "airport-phl",
+      title: "PHL Executive Commercial Portfolio Report",
+      scope: "PHL",
+      description: "Airport-specific executive report for PHL commercial data, revenue verticals, agreements, and evidence chains.",
+      rows: [...kpiRows, ...verticalRows, ...agreementRows, ...evidenceRows, ...assetRows, ...decisionRows].filter(
+        (row) => row.airport === "PHL" || row.airport === "ALL" || row.airport === undefined,
+      ),
+    },
+    {
+      id: "airport-pne",
+      title: "PNE Executive Commercial Asset Report",
+      scope: "PNE",
+      description: "Airport-specific executive report for PNE hangars, ground leases, development agreements, and governance decisions.",
+      rows: [...kpiRows, ...verticalRows, ...agreementRows, ...evidenceRows, ...assetRows, ...decisionRows].filter(
+        (row) => row.airport === "PNE" || row.airport === "ALL" || row.airport === undefined,
+      ),
+    },
+    {
+      id: "cockpit",
+      title: "Commercial BI Cockpit Report",
+      scope: "Portfolio",
+      description: "KPI, capability-risk, evidence, and decision report for executive cockpit review.",
+      rows: [
+        ...kpiRows,
+        ...domainRisks.map((risk) =>
+          reportRow("Capability risk", risk.domain, {
+            airport: risk.airport,
+            score: risk.score,
+            status: risk.status,
+            driver: risk.driver,
+            action: risk.action,
+            source: risk.source,
+          }),
+        ),
+        ...evidenceRows,
+        ...decisionRows,
+      ],
+    },
+    {
+      id: "revenue",
+      title: "Revenue Verticals Report",
+      scope: "PHL + PNE",
+      description: "Revenue vertical visibility, opportunity, internal data needs, and executive recommendations.",
+      rows: verticalRows,
+    },
+    {
+      id: "agreements",
+      title: "Lease And Agreement Governance Report",
+      scope: "PHL + PNE",
+      description: "Agreement register model with managing unit, completeness, expiration, compliance, and recommended action.",
+      rows: agreementRows,
+    },
+    {
+      id: "roadmap",
+      title: "Data Strategy Roadmap Report",
+      scope: "PHL + PNE",
+      description: "Roadmap, adoption, data asset, and strategic decision report for implementation planning.",
+      rows: [
+        ...roadmapRows,
+        ...assetRows,
+        ...adoptionItems.map((item) =>
+          reportRow("Training and adoption", item.audience, {
+            priority: item.priority,
+            targetDate: item.targetDate,
+            status: item.status,
+            toolOrProcess: item.toolOrProcess,
+            enablementTask: item.enablementTask,
+            successMeasure: item.successMeasure,
+            riskIfSkipped: item.riskIfSkipped,
+            source: item.source,
+          }),
+        ),
+        ...decisionRows.filter((row) => row.domain === "Data Strategy" || row.domain === "Commercial BI"),
+      ],
+    },
+    {
+      id: "evidence",
+      title: "Evidence Chain Citation Report",
+      scope: "Public source credibility",
+      description: "Source-linked evidence chain with citations, citation dates, trend signals, and internal data requests.",
+      rows: evidenceRows,
+    },
+  ];
+}
+
 function App() {
   const [selectedView, setSelectedView] = useState<ViewKey>("cockpit");
   const [selectedAirport, setSelectedAirport] = useState<AirportCode>("ALL");
@@ -236,9 +493,16 @@ function App() {
     [selectedAirport, severityFilter],
   );
   const chartData = useMemo(() => getChartData(selectedPeriod, selectedAirport), [selectedAirport, selectedPeriod]);
+  const reportDefinitions = useMemo(() => createReportDefinitions(selectedPeriod), [selectedPeriod]);
 
   return (
     <div className="app-shell">
+      <div className="city-service-bar">
+        <span>City of Philadelphia</span>
+        <strong>Department of Aviation</strong>
+        <span>PhilaUI-aligned civic interface pattern</span>
+      </div>
+
       <header className="topbar">
         <div className="brand-block">
           <div className="brand-mark" aria-hidden="true">
@@ -248,7 +512,8 @@ function App() {
             <p className="eyebrow">Philadelphia Department of Aviation commercial analytics</p>
             <h1>Commercial Data Management & Analysis Dashboard</h1>
             <p className="hero-copy">
-              Interview resource mapped to the Commercial Data Management & Analysis responsibilities for PHL and PNE.
+              Executive commercial BI prototype for PHL and PNE that connects public evidence, internal data requests,
+              agreement governance, and revenue-vertical decisions in a repeatable civic dashboard pattern.
             </p>
           </div>
         </div>
@@ -282,6 +547,23 @@ function App() {
         </div>
       </header>
 
+      <section className="standards-note" aria-label="City interface standard">
+        <div>
+          <p className="eyebrow">City Standard Alignment</p>
+          <h2>React prototype shaped for PhilaUI replication</h2>
+          <p>
+            The interface uses City-style civic hierarchy, blue and gold accenting, accessible button controls,
+            restrained status colors, visible source labels, and report exports. In a production City application,
+            these patterns could be rebuilt with PhilaUI Vue components while preserving the same data model and
+            executive workflow.
+          </p>
+        </div>
+        <a href="https://ui.phila.gov/" target="_blank" rel="noopener noreferrer">
+          <ExternalLink aria-hidden="true" size={15} />
+          PhilaUI reference
+        </a>
+      </section>
+
       <section className="airport-context" aria-label="Airport profiles">
         {airportProfiles
           .filter((profile) => selectedAirport === "ALL" || profile.code === selectedAirport)
@@ -304,6 +586,8 @@ function App() {
             </article>
           ))}
       </section>
+
+      <ReportCenter reports={reportDefinitions} />
 
       <nav className="view-tabs" aria-label="Dashboard views">
         {viewTabs.map((tab) => {
@@ -356,7 +640,7 @@ function App() {
         </div>
         <div className="source-links">
           {sourceReferences.map((source) => (
-            <a key={source.url} href={source.url} target="_blank" rel="noreferrer" title={source.useCase}>
+            <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" title={source.useCase}>
               <FileText aria-hidden="true" size={15} />
               {source.label}
               <ExternalLink aria-hidden="true" size={13} />
@@ -415,6 +699,49 @@ function SegmentedControl<T extends string>({
         );
       })}
     </div>
+  );
+}
+
+function ReportCenter({ reports }: { reports: ReportDefinition[] }) {
+  const formats: Array<{ format: ReportFormat; label: string; icon: LucideIcon }> = [
+    { format: "csv", label: "CSV", icon: FileSpreadsheet },
+    { format: "json", label: "JSON", icon: FileJson },
+    { format: "md", label: "Brief", icon: FileText },
+  ];
+
+  return (
+    <section className="report-center" aria-label="Downloadable reports">
+      <div className="report-heading">
+        <div>
+          <p className="eyebrow">Downloadable Reports</p>
+          <h2>Executive exports for portfolio review</h2>
+          <p>
+            Generate scoped CSV, JSON, or Markdown briefing files for airport-level review, dashboard modules,
+            evidence citations, agreements, and roadmap decisions.
+          </p>
+        </div>
+        <Download aria-hidden="true" size={22} />
+      </div>
+      <div className="report-grid">
+        {reports.map((report) => (
+          <article className="report-card" key={report.id}>
+            <div>
+              <span>{report.scope}</span>
+              <h3>{report.title}</h3>
+              <p>{report.description}</p>
+            </div>
+            <div className="report-actions" aria-label={`${report.title} download formats`}>
+              {formats.map(({ format, label, icon: Icon }) => (
+                <button key={format} type="button" onClick={() => downloadReport(report, format)}>
+                  <Icon aria-hidden="true" size={15} />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -675,7 +1002,7 @@ function AgreementGovernance({
         />
       </section>
 
-      <section className="dashboard-grid two-one">
+      <section className="dashboard-grid equal">
         <article className="panel">
           <PanelHeading icon={BarChart3} title="Agreement Completeness" meta="Taxonomy hygiene before executive reporting" />
           <div className="chart-frame">
@@ -710,6 +1037,7 @@ function AgreementGovernance({
         <div className="agreement-table" role="table" aria-label="Agreement register model">
           <div className="agreement-header" role="row">
             <span>Agreement</span>
+            <span>Managing unit</span>
             <span>Value</span>
             <span>Completeness</span>
             <span>Action</span>
@@ -723,6 +1051,7 @@ function AgreementGovernance({
                 <p>{agreement.agreementType}</p>
                 <small>Expiration {agreement.expiration}</small>
               </div>
+              <strong>{agreement.managingUnit}</strong>
               <strong>{formatCurrency(agreement.value)}</strong>
               <div className="sla-cell">
                 <span>{agreement.completeness}%</span>
@@ -752,17 +1081,32 @@ function DataStrategyRoadmap({
   decisions: DecisionItem[];
   isCompact: boolean;
 }) {
+  const [selectedAssetId, setSelectedAssetId] = useState(() => assets[0]?.id ?? "");
   const qualityChart = assets.map((asset) => ({
     name: asset.sourceName,
     quality: asset.qualityStatus === "normal" ? 90 : asset.qualityStatus === "warning" ? 64 : 38,
   }));
   const strategyDecisions = decisions.filter((decision) => decision.domain === "Data Strategy" || decision.domain === "Commercial BI");
+  const selectedAsset = assets.find((asset) => asset.id === selectedAssetId) ?? assets[0];
+
+  useEffect(() => {
+    if (!selectedAsset && assets.length > 0) {
+      setSelectedAssetId(assets[0].id);
+    }
+    if (selectedAsset && !assets.some((asset) => asset.id === selectedAsset.id)) {
+      setSelectedAssetId(assets[0]?.id ?? "");
+    }
+  }, [assets, selectedAsset]);
 
   return (
     <div className="view-stack">
       <section className="dashboard-grid equal">
         <article className="panel">
-          <PanelHeading icon={Wrench} title="Data Asset Readiness" meta="Public anchors separated from internal feeds to request" />
+          <PanelHeading
+            icon={Wrench}
+            title="Data Asset Readiness"
+            meta="Public anchors are separated from internal feeds so executives can see what is known, what is modeled, and what must be requested"
+          />
           <div className="chart-frame">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={qualityChart} margin={{ top: 8, right: 18, bottom: 0, left: -12 }}>
@@ -785,7 +1129,11 @@ function DataStrategyRoadmap({
         </article>
 
         <article className="panel">
-          <PanelHeading icon={Users} title="Training & Adoption" meta="Dashboard success depends on Commercial staff use" />
+          <PanelHeading
+            icon={Users}
+            title="Training & Adoption"
+            meta="Adoption plan with priority, target date, enablement task, success measure, and risk if skipped"
+          />
           <div className="adoption-list">
             {adoptionItems.map((item) => (
               <AdoptionRow item={item} key={item.id} />
@@ -794,37 +1142,81 @@ function DataStrategyRoadmap({
         </article>
       </section>
 
-      <section className="asset-grid">
-        {assets.map((asset) => (
-          <article className={`asset-card ${asset.qualityStatus}`} key={asset.id}>
+      <section className="dashboard-grid equal">
+        <article className="panel">
+          <PanelHeading
+            icon={Database}
+            title="Data Asset Drilldown"
+            meta="Select an asset to inspect its reporting layer, executive question, diagnostic, nuance, and decision use"
+          />
+          <div className="asset-selector">
+            {assets.map((asset) => (
+              <button
+                type="button"
+                className={`asset-option ${asset.qualityStatus} ${selectedAsset?.id === asset.id ? "active" : ""}`}
+                key={asset.id}
+                onClick={() => setSelectedAssetId(asset.id)}
+              >
+                <span className="airport-code small">{asset.airport}</span>
+                <span>{asset.sourceName}</span>
+                <ChevronRight aria-hidden="true" size={15} />
+              </button>
+            ))}
+          </div>
+        </article>
+
+        {selectedAsset && (
+          <article className={`panel asset-detail ${selectedAsset.qualityStatus}`}>
             <div className="metric-topline">
-              <span className="airport-code small">{asset.airport}</span>
-              <StatusPill status={asset.qualityStatus} />
+              <SourceBadge source={selectedAsset.source} />
+              <StatusPill status={selectedAsset.qualityStatus} />
             </div>
-            <h2>{asset.sourceName}</h2>
-            <p>{asset.commercialUseCase}</p>
-            <dl>
+            <h2>{selectedAsset.sourceName}</h2>
+            <p>{selectedAsset.commercialUseCase}</p>
+            <dl className="detail-list">
               <div>
-                <dt>Owner</dt>
-                <dd>{asset.owner}</dd>
+                <dt>Reporting layer</dt>
+                <dd>{selectedAsset.reportingLayer}</dd>
               </div>
               <div>
-                <dt>Cadence</dt>
-                <dd>{asset.refreshCadence}</dd>
+                <dt>Executive question</dt>
+                <dd>{selectedAsset.executiveQuestion}</dd>
               </div>
               <div>
-                <dt>Access</dt>
-                <dd>{asset.accessStatus}</dd>
+                <dt>Diagnostic</dt>
+                <dd>{selectedAsset.diagnostic}</dd>
+              </div>
+              <div>
+                <dt>Data nuance</dt>
+                <dd>{selectedAsset.dataNuance}</dd>
+              </div>
+              <div>
+                <dt>Decision use</dt>
+                <dd>{selectedAsset.decisionUse}</dd>
+              </div>
+              <div>
+                <dt>Owner / cadence / access</dt>
+                <dd>
+                  {selectedAsset.owner} | {selectedAsset.refreshCadence} | {selectedAsset.accessStatus}
+                </dd>
               </div>
             </dl>
-            <SourceBadge source={asset.source} />
           </article>
-        ))}
+        )}
       </section>
 
-      <section className="dashboard-grid two-one">
+      <section className="panel">
+        <PanelHeading
+          icon={CalendarDays}
+          title="First 90 Days Visual Roadmap"
+          meta="Priority, target date, progress, and executive signal compressed into a scannable implementation path"
+        />
+        <RoadmapVisual items={roadmapItems} />
+      </section>
+
+      <section className="dashboard-grid equal">
         <article className="panel">
-          <PanelHeading icon={CalendarDays} title="First 90 Days Roadmap" meta="A practical path from public evidence to governed BI" />
+          <PanelHeading icon={CalendarDays} title="First 90 Days Task Map" meta="Task-level path from public evidence to governed BI" />
           <div className="roadmap-list">
             {roadmapItems.map((item) => (
               <RoadmapRow item={item} key={item.id} />
@@ -833,7 +1225,7 @@ function DataStrategyRoadmap({
         </article>
 
         <article className="panel">
-          <PanelHeading icon={ListChecks} title="Strategy Decisions" meta="Roadmap choices that need leadership alignment" />
+          <PanelHeading icon={ListChecks} title="Strategy Decisions" meta="Choices, required data, delay risk, and review cadence" />
           <DecisionRows decisions={strategyDecisions.length > 0 ? strategyDecisions : decisions} />
         </article>
       </section>
@@ -844,7 +1236,7 @@ function DataStrategyRoadmap({
 function DomainRiskPanel({ risks }: { risks: DomainRisk[] }) {
   return (
     <article className="panel">
-        <PanelHeading icon={Target} title="Capability Risk Map" meta="Lowest score receives attention first" />
+      <PanelHeading icon={Target} title="Capability Risk Map" meta="Lowest score receives attention first" />
       <div className="risk-list">
         {risks.map((risk) => (
           <div className="risk-row" key={`${risk.airport}-${risk.domain}`}>
@@ -881,7 +1273,7 @@ function InsightPanel({ insights }: { insights: InsightItem[] }) {
       <PanelHeading
         icon={FileText}
         title="Evidence Chain"
-        meta="Posting requirement, public fact, internal data request, artifact, decision"
+        meta="Requirement, cited public fact, trend signal, internal data request, artifact, decision"
       />
       <div className="insight-list">
         {insights.map((insight) => (
@@ -896,6 +1288,17 @@ function InsightPanel({ insights }: { insights: InsightItem[] }) {
               </p>
               <p>
                 <strong>Public source fact:</strong> {insight.publicObservation}
+              </p>
+              <p>
+                <strong>Citation:</strong>{" "}
+                <a href={insight.citationUrl} target="_blank" rel="noopener noreferrer">
+                  {insight.citationLabel}
+                  <ExternalLink aria-hidden="true" size={12} />
+                </a>{" "}
+                <span className="citation-date">({insight.citationDate})</span>
+              </p>
+              <p>
+                <strong>Trend signal:</strong> {insight.trendSignal}
               </p>
               <p>
                 <strong>Commercial analytics question:</strong> {insight.businessQuestion}
@@ -936,6 +1339,24 @@ function DecisionRows({ decisions }: { decisions: DecisionItem[] }) {
               {decision.title} <span>{decision.airport}</span>
             </div>
             <p>{decision.recommendation}</p>
+            <dl className="decision-detail-list">
+              <div>
+                <dt>Rationale</dt>
+                <dd>{decision.rationale}</dd>
+              </div>
+              <div>
+                <dt>Choices</dt>
+                <dd>{decision.choices.join(" | ")}</dd>
+              </div>
+              <div>
+                <dt>Data required</dt>
+                <dd>{decision.dataRequired}</dd>
+              </div>
+              <div>
+                <dt>Risk of delay</dt>
+                <dd>{decision.riskOfDelay}</dd>
+              </div>
+            </dl>
             <div className="row-meta">
               <span>
                 <Briefcase aria-hidden="true" size={14} />
@@ -947,7 +1368,7 @@ function DecisionRows({ decisions }: { decisions: DecisionItem[] }) {
               </span>
               <span>
                 <Clock3 aria-hidden="true" size={14} />
-                {decision.dueDate}
+                {decision.dueDate} | {decision.nextReview}
               </span>
               <SourceBadge source={decision.source} />
             </div>
@@ -967,8 +1388,24 @@ function AdoptionRow({ item }: { item: TrainingOrAdoptionItem }) {
     <div className="adoption-row">
       <div className={`severity-rail ${item.status}`} />
       <div>
-        <div className="row-title">{item.audience}</div>
+        <div className="row-title">
+          {item.audience} <span>{item.priority} | {item.targetDate}</span>
+        </div>
         <p>{item.skillGap}</p>
+        <dl className="adoption-detail-list">
+          <div>
+            <dt>Enablement task</dt>
+            <dd>{item.enablementTask}</dd>
+          </div>
+          <div>
+            <dt>Success measure</dt>
+            <dd>{item.successMeasure}</dd>
+          </div>
+          <div>
+            <dt>Risk if skipped</dt>
+            <dd>{item.riskIfSkipped}</dd>
+          </div>
+        </dl>
         <div className="row-meta">
           <span>{item.toolOrProcess}</span>
           <span>{item.nextMilestone}</span>
@@ -984,15 +1421,43 @@ function RoadmapRow({ item }: { item: RoadmapItem }) {
   return (
     <div className="roadmap-row">
       <div>
-        <span className="phase-pill">{item.phase}</span>
+        <span className="phase-pill">{item.phase} | {item.priority} | {item.targetDate}</span>
         <div className="row-title">{item.title}</div>
         <p>{item.outcome}</p>
+        <div className="progress-track roadmap-progress">
+          <div className={item.status} style={{ width: `${item.progress}%` }} />
+        </div>
+        <strong>{item.executiveSignal}</strong>
         <div className="row-meta">
           <span>{item.owner}</span>
           <SourceBadge source={item.source} />
         </div>
       </div>
       <StatusPill status={item.status} />
+    </div>
+  );
+}
+
+function RoadmapVisual({ items }: { items: RoadmapItem[] }) {
+  return (
+    <div className="roadmap-visual">
+      {items.map((item) => (
+        <article className={`roadmap-step ${item.status}`} key={item.id}>
+          <div className="roadmap-step-top">
+            <span>{item.phase}</span>
+            <strong>{item.priority}</strong>
+          </div>
+          <h3>{item.title}</h3>
+          <p>{item.executiveSignal}</p>
+          <div className="progress-track">
+            <div className={item.status} style={{ width: `${item.progress}%` }} />
+          </div>
+          <div className="roadmap-step-meta">
+            <span>{item.progress}%</span>
+            <span>{item.targetDate}</span>
+          </div>
+        </article>
+      ))}
     </div>
   );
 }

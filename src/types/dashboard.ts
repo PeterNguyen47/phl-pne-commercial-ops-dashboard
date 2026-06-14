@@ -80,6 +80,11 @@ export interface DataAsset {
   qualityStatus: StatusKind;
   accessStatus: string;
   commercialUseCase: string;
+  reportingLayer: string;
+  executiveQuestion: string;
+  diagnostic: string;
+  dataNuance: string;
+  decisionUse: string;
   source: SourceKind;
 }
 
@@ -88,6 +93,7 @@ export interface AgreementRecord {
   airport: AirportCode;
   agreementType: string;
   tenantOrVendor: string;
+  managingUnit: string;
   value: number;
   expiration: string;
   completeness: number;
@@ -107,6 +113,10 @@ export interface InsightItem {
   dashboardArtifact: string;
   decisionSupported: string;
   recommendation: string;
+  citationLabel: string;
+  citationUrl: string;
+  citationDate: string;
+  trendSignal: string;
   status: StatusKind;
   source: SourceKind;
 }
@@ -118,6 +128,11 @@ export interface TrainingOrAdoptionItem {
   toolOrProcess: string;
   status: StatusKind;
   nextMilestone: string;
+  priority: string;
+  targetDate: string;
+  enablementTask: string;
+  successMeasure: string;
+  riskIfSkipped: string;
   source: SourceKind;
 }
 
@@ -127,6 +142,10 @@ export interface RoadmapItem {
   title: string;
   outcome: string;
   owner: string;
+  targetDate: string;
+  priority: string;
+  progress: number;
+  executiveSignal: string;
   status: StatusKind;
   source: SourceKind;
 }
@@ -150,6 +169,11 @@ export interface DecisionItem {
   dueDate: string;
   impact: string;
   recommendation: string;
+  rationale: string;
+  choices: string[];
+  dataRequired: string;
+  riskOfDelay: string;
+  nextReview: string;
   status: "New" | "In Review" | "Escalated" | "Approved";
   source: SourceKind;
 }
