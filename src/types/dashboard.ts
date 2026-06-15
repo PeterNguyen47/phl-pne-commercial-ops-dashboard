@@ -94,11 +94,57 @@ export interface AgreementRecord {
   agreementType: string;
   tenantOrVendor: string;
   managingUnit: string;
-  value: number;
+  value: number | null;
   expiration: string;
   completeness: number;
   complianceFlag: StatusKind;
+  publicAccessStatus: string;
+  publicBasis: string;
+  internalRecordNeeded: string;
   recommendedAction: string;
+  source: SourceKind;
+}
+
+export interface FeedConnection {
+  id: string;
+  airport: AirportCode;
+  feedName: string;
+  domain: CommercialVertical;
+  accountableOwner: string;
+  currentState: string;
+  refreshTarget: string;
+  firstMetrics: string[];
+  qualityGate: string;
+  executiveUse: string;
+  status: StatusKind;
+  source: SourceKind;
+}
+
+export interface SourceQualityScore {
+  id: string;
+  airport: AirportCode;
+  sourceName: string;
+  accountableOwner: string;
+  completeness: number;
+  freshness: number;
+  lineage: number;
+  stewardship: number;
+  overall: number;
+  nextControl: string;
+  escalationRule: string;
+  status: StatusKind;
+  source: SourceKind;
+}
+
+export interface PortfolioDrilldown {
+  id: string;
+  airport: AirportOnlyCode;
+  audience: string;
+  portfolioScope: string;
+  decisionQuestions: string[];
+  publicEvidence: string;
+  feedGaps: string;
+  executiveActions: string[];
   source: SourceKind;
 }
 

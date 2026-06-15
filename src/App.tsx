@@ -21,6 +21,7 @@ import {
   Filter,
   Fuel,
   Gauge,
+  GitBranch,
   Landmark,
   ListChecks,
   Plane,
@@ -56,10 +57,13 @@ import {
   decisionItems,
   domainRisks,
   executiveKpis,
+  feedConnections,
   insightItems,
+  portfolioDrilldowns,
   roadmapItems,
   capabilityAlignment,
   severityRank,
+  sourceQualityScores,
   sourceReferences,
   trendData,
 } from "./data/dashboardData";
@@ -70,11 +74,14 @@ import type {
   DataAsset,
   DecisionItem,
   DomainRisk,
+  FeedConnection,
   InsightItem,
   KpiMetric,
+  PortfolioDrilldown,
   PeriodKey,
   RoadmapItem,
   SourceKind,
+  SourceQualityScore,
   StatusKind,
   TrainingOrAdoptionItem,
 } from "./types/dashboard";
@@ -151,7 +158,11 @@ const statusColors: Record<StatusKind, string> = {
   critical: "#b42318",
 };
 
-function formatCurrency(value: number) {
+function formatCurrency(value: number | null) {
+  if (value === null) {
+    return "Access needed";
+  }
+
   if (value >= 1000000) {
     return `$${(value / 1000000).toFixed(1)}M`;
   }
@@ -451,9 +462,52 @@ function createReportDefinitions(period: PeriodKey): ReportDefinition[] {
       value: formatCurrency(agreement.value),
       expiration: agreement.expiration,
       completeness: `${agreement.completeness}%`,
+      publicAccessStatus: agreement.publicAccessStatus,
+      publicBasis: agreement.publicBasis,
+      internalRecordNeeded: agreement.internalRecordNeeded,
       status: agreement.complianceFlag,
       recommendedAction: agreement.recommendedAction,
       source: agreement.source,
+    }),
+  );
+  const feedRows = feedConnections.map((feed) =>
+    reportRow("Feed connection", feed.feedName, {
+      airport: feed.airport,
+      domain: feed.domain,
+      accountableOwner: feed.accountableOwner,
+      currentState: feed.currentState,
+      refreshTarget: feed.refreshTarget,
+      firstMetrics: feed.firstMetrics.join(" | "),
+      qualityGate: feed.qualityGate,
+      executiveUse: feed.executiveUse,
+      status: feed.status,
+      source: feed.source,
+    }),
+  );
+  const qualityRows = sourceQualityScores.map((score) =>
+    reportRow("Source quality", score.sourceName, {
+      airport: score.airport,
+      accountableOwner: score.accountableOwner,
+      overall: `${score.overall}/100`,
+      completeness: `${score.completeness}/100`,
+      freshness: `${score.freshness}/100`,
+      lineage: `${score.lineage}/100`,
+      stewardship: `${score.stewardship}/100`,
+      nextControl: score.nextControl,
+      escalationRule: score.escalationRule,
+      status: score.status,
+      source: score.source,
+    }),
+  );
+  const portfolioRows = portfolioDrilldowns.map((drilldown) =>
+    reportRow("Leadership drilldown", drilldown.audience, {
+      airport: drilldown.airport,
+      portfolioScope: drilldown.portfolioScope,
+      decisionQuestions: drilldown.decisionQuestions.join(" | "),
+      publicEvidence: drilldown.publicEvidence,
+      feedGaps: drilldown.feedGaps,
+      executiveActions: drilldown.executiveActions.join(" | "),
+      source: drilldown.source,
     }),
   );
   const roadmapRows = roadmapItems.map((item) =>
@@ -509,6 +563,17 @@ function createReportDefinitions(period: PeriodKey): ReportDefinition[] {
       source: decision.source,
     }),
   );
+  const portfolioReportRows = [
+    ...kpiRows,
+    ...verticalRows,
+    ...agreementRows,
+    ...feedRows,
+    ...qualityRows,
+    ...portfolioRows,
+    ...evidenceRows,
+    ...assetRows,
+    ...decisionRows,
+  ];
 
   return [
     {
@@ -516,7 +581,7 @@ function createReportDefinitions(period: PeriodKey): ReportDefinition[] {
       title: "PHL Executive Commercial Portfolio Report",
       scope: "PHL",
       description: "Airport-specific executive report for PHL commercial data, revenue verticals, agreements, and evidence chains.",
-      rows: [...kpiRows, ...verticalRows, ...agreementRows, ...evidenceRows, ...assetRows, ...decisionRows].filter(
+      rows: portfolioReportRows.filter(
         (row) => row.airport === "PHL" || row.airport === "ALL" || row.airport === undefined,
       ),
     },
@@ -525,7 +590,7 @@ function createReportDefinitions(period: PeriodKey): ReportDefinition[] {
       title: "PNE Executive Commercial Asset Report",
       scope: "PNE",
       description: "Airport-specific executive report for PNE hangars, ground leases, development agreements, and governance decisions.",
-      rows: [...kpiRows, ...verticalRows, ...agreementRows, ...evidenceRows, ...assetRows, ...decisionRows].filter(
+      rows: portfolioReportRows.filter(
         (row) => row.airport === "PNE" || row.airport === "ALL" || row.airport === undefined,
       ),
     },
@@ -547,6 +612,8 @@ function createReportDefinitions(period: PeriodKey): ReportDefinition[] {
           }),
         ),
         ...evidenceRows,
+        ...qualityRows,
+        ...portfolioRows,
         ...decisionRows,
       ],
     },
@@ -561,7 +628,7 @@ function createReportDefinitions(period: PeriodKey): ReportDefinition[] {
       id: "agreements",
       title: "Lease And Agreement Governance Report",
       scope: "PHL + PNE",
-      description: "Agreement register model with managing unit, completeness, expiration, compliance, and recommended action.",
+      description: "Public agreement-access register with managing unit, public basis, internal record gaps, completeness, and recommended action.",
       rows: agreementRows,
     },
     {
@@ -572,6 +639,9 @@ function createReportDefinitions(period: PeriodKey): ReportDefinition[] {
       rows: [
         ...roadmapRows,
         ...assetRows,
+        ...feedRows,
+        ...qualityRows,
+        ...portfolioRows,
         ...adoptionItems.map((item) =>
           reportRow("Training and adoption", item.audience, {
             priority: item.priority,
@@ -593,6 +663,13 @@ function createReportDefinitions(period: PeriodKey): ReportDefinition[] {
       scope: "Public source credibility",
       description: "Source-linked evidence chain with citations, citation dates, trend signals, and internal data requests.",
       rows: evidenceRows,
+    },
+    {
+      id: "source-quality",
+      title: "Source Quality And Feed Accountability Report",
+      scope: "PHL + PNE",
+      description: "Accountable owners, source-quality scores, feed connection status, refresh targets, and escalation rules.",
+      rows: [...qualityRows, ...feedRows],
     },
   ];
 }
@@ -624,6 +701,18 @@ function App() {
     () =>
       filterBySeverity(filterByAirport(agreementRecords, selectedAirport), severityFilter, (item) => item.complianceFlag),
     [selectedAirport, severityFilter],
+  );
+  const scopedFeeds = useMemo(
+    () => filterBySeverity(filterByAirport(feedConnections, selectedAirport), severityFilter, (item) => item.status),
+    [selectedAirport, severityFilter],
+  );
+  const scopedSourceQuality = useMemo(
+    () => filterBySeverity(filterByAirport(sourceQualityScores, selectedAirport), severityFilter, (item) => item.status),
+    [selectedAirport, severityFilter],
+  );
+  const scopedPortfolioDrilldowns = useMemo(
+    () => portfolioDrilldowns.filter((item) => selectedAirport === "ALL" || item.airport === selectedAirport),
+    [selectedAirport],
   );
   const scopedAssets = useMemo(
     () => filterBySeverity(filterByAirport(dataAssets, selectedAirport), severityFilter, (item) => item.qualityStatus),
@@ -781,6 +870,9 @@ function App() {
             risks={scopedRisks}
             insights={scopedInsights}
             decisions={scopedDecisions}
+            feeds={scopedFeeds}
+            sourceQualityScores={scopedSourceQuality}
+            portfolioDrilldowns={scopedPortfolioDrilldowns}
             chartData={chartData}
             isCompact={isCompact}
             templateProfile={templateProfile}
@@ -801,7 +893,14 @@ function App() {
           <AgreementGovernance agreements={scopedAgreements} decisions={scopedDecisions} isCompact={isCompact} />
         )}
         {selectedView === "roadmap" && (
-          <DataStrategyRoadmap assets={scopedAssets} decisions={scopedDecisions} isCompact={isCompact} />
+          <DataStrategyRoadmap
+            assets={scopedAssets}
+            decisions={scopedDecisions}
+            feeds={scopedFeeds}
+            sourceQualityScores={scopedSourceQuality}
+            portfolioDrilldowns={scopedPortfolioDrilldowns}
+            isCompact={isCompact}
+          />
         )}
       </main>
 
@@ -1033,6 +1132,9 @@ function CommercialBiCockpit({
   risks,
   insights,
   decisions,
+  feeds,
+  sourceQualityScores,
+  portfolioDrilldowns,
   chartData,
   isCompact,
   templateProfile,
@@ -1043,6 +1145,9 @@ function CommercialBiCockpit({
   risks: DomainRisk[];
   insights: InsightItem[];
   decisions: DecisionItem[];
+  feeds: FeedConnection[];
+  sourceQualityScores: SourceQualityScore[];
+  portfolioDrilldowns: PortfolioDrilldown[];
   chartData: Array<{
     label: string;
     opportunity: number;
@@ -1162,6 +1267,20 @@ function CommercialBiCockpit({
       <section className="dashboard-grid equal">
         <DomainRiskPanel risks={risks} />
         <InsightPanel insights={insights} prediction={prediction} />
+      </section>
+
+      <section className="dashboard-grid equal">
+        <SourceQualityPanel scores={sourceQualityScores} />
+        <PortfolioDrilldownPanel drilldowns={portfolioDrilldowns} />
+      </section>
+
+      <section className="panel">
+        <PanelHeading
+          icon={GitBranch}
+          title="Feed Connection Blueprint"
+          meta={`${feeds.length} scoped feeds with owner, refresh target, quality gate, and executive use`}
+        />
+        <FeedConnectionRows feeds={feeds} />
       </section>
 
       <section className="panel">
@@ -1285,30 +1404,30 @@ function AgreementGovernance({
   const agreementChart = agreements.map((agreement) => ({
     name: agreement.tenantOrVendor,
     completeness: agreement.completeness,
-    value: Math.round(agreement.value / 1000),
   }));
   const agreementDecisions = decisions.filter((decision) => decision.domain === "Lease Governance");
+  const publicAccessCount = agreements.filter((agreement) => agreement.source === "Public Source").length;
 
   return (
     <div className="view-stack">
       <section className="summary-strip">
-        <SummaryTile icon={Briefcase} label="Agreement records" value={String(agreements.length)} source="Illustrative Model" />
+        <SummaryTile icon={Briefcase} label="Agreement access records" value={String(agreements.length)} source="Public Source" />
         <SummaryTile
           icon={Gauge}
           label="Avg completeness"
           value={`${Math.round(agreements.reduce((sum, item) => sum + item.completeness, 0) / Math.max(agreements.length, 1))}%`}
-          source="Illustrative Model"
+          source="Derived From Public"
+        />
+        <SummaryTile
+          icon={FileText}
+          label="Publicly anchored"
+          value={`${publicAccessCount}/${agreements.length}`}
+          source="Public Source"
         />
         <SummaryTile
           icon={AlertTriangle}
-          label="Compliance flags"
-          value={String(agreements.filter((item) => item.complianceFlag !== "normal").length)}
-          source="Illustrative Model"
-        />
-        <SummaryTile
-          icon={Landmark}
-          label="Modeled value"
-          value={formatCurrency(agreements.reduce((sum, item) => sum + item.value, 0))}
+          label="Internal records needed"
+          value={String(agreements.filter((item) => item.source !== "Public Source" || item.value === null).length)}
           source="Illustrative Model"
         />
       </section>
@@ -1344,13 +1463,18 @@ function AgreementGovernance({
       </section>
 
       <section className="panel">
-        <PanelHeading icon={Briefcase} title="Agreement Register Model" meta="Illustrative fields Commercial analytics would standardize" />
+        <PanelHeading
+          icon={Briefcase}
+          title="Public Agreement Access Register"
+          meta="Public agreement signals are separated from internal lease economics, amendments, tenant terms, and compliance records"
+        />
         <div className="agreement-table" role="table" aria-label="Agreement register model">
           <div className="agreement-header" role="row">
-            <span>Agreement</span>
+            <span>Public agreement signal</span>
             <span>Managing unit</span>
-            <span>Value</span>
+            <span>Access</span>
             <span>Completeness</span>
+            <span>Internal record needed</span>
             <span>Action</span>
           </div>
           {agreements.map((agreement) => (
@@ -1363,13 +1487,17 @@ function AgreementGovernance({
                 <small>Expiration {agreement.expiration}</small>
               </div>
               <strong>{agreement.managingUnit}</strong>
-              <strong>{formatCurrency(agreement.value)}</strong>
+              <div className="access-cell">
+                <strong>{agreement.publicAccessStatus}</strong>
+                <small>{agreement.publicBasis}</small>
+              </div>
               <div className="sla-cell">
                 <span>{agreement.completeness}%</span>
                 <div className="progress-track">
                   <div className={agreement.complianceFlag} style={{ width: `${agreement.completeness}%` }} />
                 </div>
               </div>
+              <p>{agreement.internalRecordNeeded}</p>
               <div>
                 <StatusPill status={agreement.complianceFlag} />
                 <p>{agreement.recommendedAction}</p>
@@ -1386,10 +1514,16 @@ function AgreementGovernance({
 function DataStrategyRoadmap({
   assets,
   decisions,
+  feeds,
+  sourceQualityScores,
+  portfolioDrilldowns,
   isCompact,
 }: {
   assets: DataAsset[];
   decisions: DecisionItem[];
+  feeds: FeedConnection[];
+  sourceQualityScores: SourceQualityScore[];
+  portfolioDrilldowns: PortfolioDrilldown[];
   isCompact: boolean;
 }) {
   const [selectedAssetId, setSelectedAssetId] = useState(() => assets[0]?.id ?? "");
@@ -1516,6 +1650,20 @@ function DataStrategyRoadmap({
         )}
       </section>
 
+      <section className="dashboard-grid equal">
+        <SourceQualityPanel scores={sourceQualityScores} />
+        <PortfolioDrilldownPanel drilldowns={portfolioDrilldowns} />
+      </section>
+
+      <section className="panel">
+        <PanelHeading
+          icon={GitBranch}
+          title="Production Feed Connection Plan"
+          meta="Parking, concessions, ground transportation, cargo, gate, schedule, and PNE asset feeds mapped to owners"
+        />
+        <FeedConnectionRows feeds={feeds} />
+      </section>
+
       <section className="panel">
         <PanelHeading
           icon={CalendarDays}
@@ -1541,6 +1689,167 @@ function DataStrategyRoadmap({
         </article>
       </section>
     </div>
+  );
+}
+
+function SourceQualityPanel({ scores }: { scores: SourceQualityScore[] }) {
+  if (scores.length === 0) {
+    return (
+      <article className="panel">
+        <PanelHeading icon={Target} title="Source Quality Scorecard" meta="No matching sources for current filters" />
+        <div className="empty-state">No source-quality records match the current filters.</div>
+      </article>
+    );
+  }
+
+  return (
+    <article className="panel">
+      <PanelHeading
+        icon={Target}
+        title="Source Quality Scorecard"
+        meta="Accountable owners, four-part score, next control, and escalation rule"
+      />
+      <div className="quality-list">
+        {scores.map((score) => {
+          const componentScores: Array<[string, number]> = [
+            ["Completeness", score.completeness],
+            ["Freshness", score.freshness],
+            ["Lineage", score.lineage],
+            ["Stewardship", score.stewardship],
+          ];
+
+          return (
+            <div className={`quality-row ${score.status}`} key={score.id}>
+              <div className="quality-score">
+                <span>Score</span>
+                <strong>{score.overall}/100</strong>
+              </div>
+              <div>
+                <div className="row-title">
+                  {score.sourceName} <span>{score.airport}</span>
+                </div>
+                <p>
+                  <strong>Owner:</strong> {score.accountableOwner}
+                </p>
+                <div className="quality-bars" aria-label={`${score.sourceName} component scores`}>
+                  {componentScores.map(([label, value]) => (
+                    <div key={label}>
+                      <span>{label}</span>
+                      <div className="progress-track">
+                        <div className={score.status} style={{ width: `${value}%` }} />
+                      </div>
+                      <strong>{value}</strong>
+                    </div>
+                  ))}
+                </div>
+                <p>
+                  <strong>Next control:</strong> {score.nextControl}
+                </p>
+                <p>
+                  <strong>Escalation:</strong> {score.escalationRule}
+                </p>
+                <SourceBadge source={score.source} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </article>
+  );
+}
+
+function FeedConnectionRows({ feeds }: { feeds: FeedConnection[] }) {
+  if (feeds.length === 0) {
+    return <div className="empty-state">No feed connections match the current filters.</div>;
+  }
+
+  return (
+    <div className="feed-grid">
+      {feeds.map((feed) => (
+        <article className={`feed-card ${feed.status}`} key={feed.id}>
+          <div className="metric-topline">
+            <span className="airport-code small">{feed.airport}</span>
+            <StatusPill status={feed.status} />
+          </div>
+          <h3>{feed.feedName}</h3>
+          <p>{feed.currentState}</p>
+          <dl>
+            <div>
+              <dt>Owner</dt>
+              <dd>{feed.accountableOwner}</dd>
+            </div>
+            <div>
+              <dt>Refresh target</dt>
+              <dd>{feed.refreshTarget}</dd>
+            </div>
+            <div>
+              <dt>First metrics</dt>
+              <dd>{feed.firstMetrics.join(", ")}</dd>
+            </div>
+            <div>
+              <dt>Quality gate</dt>
+              <dd>{feed.qualityGate}</dd>
+            </div>
+            <div>
+              <dt>Executive use</dt>
+              <dd>{feed.executiveUse}</dd>
+            </div>
+          </dl>
+          <SourceBadge source={feed.source} />
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function PortfolioDrilldownPanel({ drilldowns }: { drilldowns: PortfolioDrilldown[] }) {
+  if (drilldowns.length === 0) {
+    return (
+      <article className="panel">
+        <PanelHeading icon={Landmark} title="Leadership Portfolio Drilldowns" meta="No matching audience view" />
+        <div className="empty-state">No portfolio drilldowns match the current airport filter.</div>
+      </article>
+    );
+  }
+
+  return (
+    <article className="panel">
+      <PanelHeading
+        icon={Landmark}
+        title="Leadership Portfolio Drilldowns"
+        meta="PHL and PNE leadership lenses with decision questions, feed gaps, and executive actions"
+      />
+      <div className="portfolio-drilldown-list">
+        {drilldowns.map((drilldown) => (
+          <div className="portfolio-drilldown" key={drilldown.id}>
+            <div className="metric-topline">
+              <span className="airport-code small">{drilldown.airport}</span>
+              <SourceBadge source={drilldown.source} />
+            </div>
+            <h3>{drilldown.audience}</h3>
+            <p>{drilldown.portfolioScope}</p>
+            <dl className="detail-list">
+              <div>
+                <dt>Decision questions</dt>
+                <dd>{drilldown.decisionQuestions.join(" | ")}</dd>
+              </div>
+              <div>
+                <dt>Public evidence</dt>
+                <dd>{drilldown.publicEvidence}</dd>
+              </div>
+              <div>
+                <dt>Feed gaps</dt>
+                <dd>{drilldown.feedGaps}</dd>
+              </div>
+              <div>
+                <dt>Executive actions</dt>
+                <dd>{drilldown.executiveActions.join(" | ")}</dd>
+              </div>
+            </dl>
+          </div>
+        ))}
+      </div>
+    </article>
   );
 }
 

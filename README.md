@@ -6,6 +6,8 @@ This is a public-source commercial analytics prototype. It uses public PHL/PNE, 
 
 Deployed prototype: [phl-pne-commercial-ops-dashboard-three.vercel.app](https://phl-pne-commercial-ops-dashboard-three.vercel.app/)
 
+Companion briefing deck: [PHL + PNE Commercial BI Executive Briefing](docs/briefing/phl-pne-commercial-bi-executive-briefing.pptx)
+
 ## Prototype Screenshots
 
 ### Commercial BI Cockpit
@@ -36,6 +38,11 @@ Deployed prototype: [phl-pne-commercial-ops-dashboard-three.vercel.app](https://
 - Client-side CSV, JSON, and Markdown downloads for PHL, PNE, cockpit, revenue, agreement governance, roadmap, and evidence-chain reports.
 - Workstream template upload for CSV/JSON files so department, unit, or group templates can preserve local columns while feeding centralized metadata reporting.
 - Illustrative machine-learning readiness prediction that re-scores uploaded template coverage, confidence, custom fields, and executive remediation focus after each upload/refresh.
+- Public agreement-access register that separates public contract/opportunity signals from internal lease economics, amendments, tenant terms, and compliance records.
+- Feed connection blueprint for parking, concessions, ground transportation, cargo, gate/schedule activity, and PNE asset records.
+- Source-quality scorecard with accountable owners, four-part scoring, next controls, and escalation rules.
+- PHL and PNE leadership portfolio drilldowns with audience-specific decision questions and executive actions.
+- Editable PowerPoint briefing deck that explains the dashboard story for interview or stakeholder discussion.
 
 ## How This Maps To The Posting
 
@@ -46,10 +53,10 @@ The posting is used as the explicit capability framework, not as the product ide
 | Business intelligence and analytics | Commercial BI cockpit with KPIs, risk map, trend model, source library, and decision worklist |
 | Dashboards and reporting tools | Four-tab executive BI prototype with consistent airport, period, and severity filters |
 | Strategic recommendations and operational improvements | Evidence-chain cards connecting public facts to business questions, internal data requests, and recommended action |
-| Lease/agreement storage, retrieval, expirations, compliance, and tenant reporting | Agreement governance model with completeness, value, expiration, compliance flag, and action fields |
+| Lease/agreement storage, retrieval, expirations, compliance, and tenant reporting | Public agreement-access register with public basis, managing unit, internal record gap, completeness, and recommended action |
 | Staff training and tool adoption | Adoption workstream and first-90-days roadmap |
-| ETL/data warehouse partnership with IT | Data asset readiness model separating public anchors from internal feeds needed |
-| Cross-departmental data governance | Source-owner, cadence, quality, access, and commercial-use-case fields |
+| ETL/data warehouse partnership with IT | Feed connection blueprint for parking, concessions, ground transportation, cargo, gates, schedules, and PNE assets |
+| Cross-departmental data governance | Source-quality scorecard with accountable owners, stewardship controls, and escalation rules |
 | AI-assisted analysis exploration | Governed AI guardrail roadmap item |
 
 ## How Public Data Becomes Commercial BI
@@ -62,6 +69,8 @@ Example: PHL public facts show more than 30M 2025 passengers, 126 gates, 16,126 
 
 PNE is treated as a distinct commercial asset portfolio. The PNE public page describes 1,150 acres, Pennsylvania's third busiest airport status, on-call Customs/Immigration/USDA services, and approximately 215 based aircraft. Current PHL Fast Facts lists 1,118 acres, approximately 167 based aircraft, 85 T-hangars, nine corporate hangars, six open hangars, 8,910 January 2026 movements, and active capital projects. The dashboard treats that public-source difference as a data-governance signal before translating PNE into hangar, tenant, ground lease, and development-agreement reporting needs.
 
+Commercial agreement data is handled with the same provenance discipline. Public City and PHL pages expose agreement categories and opportunity routing, including professional services, commodities, concession agreements, public works context, and the PHL Contracts Hub path. They do not expose authoritative airport lease economics, amendments, tenant performance, or renewal/compliance detail. The dashboard therefore replaces illustrative lease values with a public agreement-access register and makes the internal record request explicit.
+
 ## Data Used
 
 | Data category | Used for | Provenance |
@@ -69,10 +78,11 @@ PNE is treated as a distinct commercial asset portfolio. The PNE public page des
 | City of Philadelphia posting | Capability framework for Commercial BI, data governance, agreements, adoption, IT partnership, and AI-assisted analysis | Public Source |
 | PHL annual reports, Fast Facts, statistical information, and airport pages | Passenger/activity context, gates, parking, cargo, carrier/destination, capital program, and commercial portfolio narrative | Public Source |
 | PNE public airport profile and Fast Facts | Reliever-airport context, based-aircraft context, hangar inventory, tenant/hangar/ground-lease lens | Public Source |
-| City open contract data | Public procurement and agreement-discovery starting point | Public Source |
+| City open contract data, commodities contracts, professional services contracts, and PHL contracting opportunities | Public procurement and agreement-access starting point; internal lease/agreement records still required for authoritative governance | Public Source |
 | FAA passenger/cargo data and BTS on-time data | Passenger, cargo, schedule, reliability, and aviation-activity context | Public Source |
 | Revenue vertical visibility, agreement completeness, internal feed readiness, and BI adoption | Illustrative model of internal commercial data to request and govern | Illustrative Model |
 | Team-owned uploaded templates, custom columns, qualitative notes, morale/satisfaction fields, and metadata classifications | Centralized reporting intake while preserving current unit workflows | Illustrative Model |
+| Feed connection blueprint and source-quality scores | ETL/data warehouse planning, owner accountability, controls, and escalation | Illustrative Model / Derived From Public |
 | Public observations converted into business questions and recommendations | Inference layer connecting public evidence to strategic action | Derived From Public |
 
 Public anchors are linked in the app footer:
@@ -84,6 +94,9 @@ Public anchors are linked in the app footer:
 - [PHL + PNE About Us](https://www.phl.org/about/about-us)
 - [Northeast Philadelphia Airport](https://www.phl.org/PNE)
 - [City Open Contract Data](https://www.phila.gov/contracts/data/)
+- [PHL Contracting Opportunities](https://www.phl.org/business/contracting-opportunities)
+- [City Commodities Contracts](https://www.phila.gov/contracts/data/commodities/)
+- [City Professional Services Contracts](https://www.phila.gov/contracts/data/professional-services/)
 - [BTS On-Time Statistics](https://www.transtats.bts.gov/ONTIME/)
 - [FAA Passenger and Cargo Data](https://www.faa.gov/airports/planning_capacity/passenger_allcargo_stats/passenger)
 
@@ -91,20 +104,22 @@ Public anchors are linked in the app footer:
 
 The dashboard is organized around four views:
 
-- **Commercial BI Cockpit**: portfolio KPIs, role capability map, data maturity trend, evidence chains, and commercial decision worklist.
+- **Commercial BI Cockpit**: portfolio KPIs, role capability map, data maturity trend, evidence chains, source-quality scorecard, leadership drilldowns, feed blueprint, and commercial decision worklist.
 - **Revenue Verticals**: parking, ground transportation, concessions, advertising, cargo, gate utilization, airline schedules, PNE hangars, and development-agreement opportunity views.
-- **Lease & Agreement Governance**: agreement completeness, modeled value, managing unit, compliance flags, renewal/action needs, and standardized agreement register model.
-- **Data Strategy Roadmap**: source inventory, clickable data-asset drilldowns, Commercial staff adoption details, IT/data partnership needs, AI-assisted analysis guardrails, visual 90-day roadmap, and strategy choices.
+- **Lease & Agreement Governance**: public agreement-access register, managing unit, public basis, internal record gap, completeness, compliance flags, and action needs.
+- **Data Strategy Roadmap**: source inventory, clickable data-asset drilldowns, feed connection plan, source-quality scorecard, leadership drilldowns, Commercial staff adoption details, IT/data partnership needs, AI-assisted analysis guardrails, visual 90-day roadmap, and strategy choices.
 - **Downloadable Reports**: client-side CSV, JSON, and Markdown exports for airport-level and module-level executive review.
 - **Template Metadata Intake**: CSV/JSON upload path for team-owned report templates. Added fields are classified as mapped or custom and as qualitative or quantitative.
 - **Predictive Refresh Layer**: illustrative ML readiness scoring that updates when a workstream template is uploaded or refreshed.
+- **Executive Briefing Deck**: editable PowerPoint narrative that turns the prototype into a concise stakeholder story.
 
 ## Codebase Walkthrough
 
-- `src/types/dashboard.ts`: shared TypeScript interfaces for airports, sources, KPIs, commercial verticals, data assets, agreements, evidence-chain insights, adoption items, roadmap items, and decisions.
-- `src/data/dashboardData.ts`: typed local fixtures, source references, current public facts, illustrative internal models, capability map, commercial verticals, agreement records, data assets, insight chains, roadmap, and decision worklist.
-- `src/App.tsx`: dashboard state, filter/derived-metric functions, report serializers, chart transformations, reusable components, and four tab compositions.
+- `src/types/dashboard.ts`: shared TypeScript interfaces for airports, sources, KPIs, commercial verticals, data assets, public agreement-access records, feed connections, source-quality scores, leadership drilldowns, evidence-chain insights, adoption items, roadmap items, and decisions.
+- `src/data/dashboardData.ts`: typed local fixtures, source references, current public facts, illustrative internal models, capability map, commercial verticals, agreement-access records, feed connection plan, source-quality workflow, leadership drilldowns, data assets, insight chains, roadmap, and decision worklist.
+- `src/App.tsx`: dashboard state, filter/derived-metric functions, report serializers, chart transformations, reusable components, source-quality/feed/drilldown panels, and four tab compositions.
 - `src/styles.css`: responsive City-friendly dashboard styling, civic service bar, report cards, status treatments, provenance badges, charts, tables, roadmap visuals, and mobile behavior.
+- `docs/briefing/phl-pne-commercial-bi-executive-briefing.pptx`: companion editable PowerPoint deck explaining the dashboard story.
 
 Inline comments are included where they clarify the data model, provenance boundary, filter behavior, derived chart values, and dashboard composition.
 
@@ -137,9 +152,31 @@ pnpm build
 
 ## Prototype Status
 
-This is prototype v1.4. It is not a production BI deployment and does not connect to live airport, parking, lease, contract, concessions, gate, cargo, or aviation systems. Internal operational metrics, uploaded template parsing, and predictive readiness scoring are intentionally marked as illustrative models until real feeds and approved models are available.
+This is prototype v1.5. It is not a production BI deployment and does not connect to live airport, parking, lease, contract, concessions, gate, cargo, or aviation systems. Public contract pages are used for agreement-access discovery, but authoritative lease economics, amendments, tenant terms, renewal history, and compliance records still require internal systems. Internal operational metrics, uploaded template parsing, feed connection scoring, and predictive readiness scoring are intentionally marked as illustrative models until real feeds and approved models are available.
 
 ## Changelog
+
+### v1.5 - Agreement access, feed accountability, source quality, and briefing deck
+
+Added:
+
+- Public agreement-access register replacing illustrative lease-value rows with public basis, access status, internal record needed, managing unit, completeness, and action fields.
+- Public source links for PHL Contracting Opportunities, City Commodities Contracts, and City Professional Services Contracts.
+- Feed connection blueprint for parking, concessions, ground transportation, cargo, gate/schedule activity, and PNE asset records.
+- Source-quality scoring workflow with accountable owners, completeness/freshness/lineage/stewardship scores, next controls, and escalation rules.
+- PHL and PNE leadership portfolio drilldowns with decision questions, feed gaps, and executive actions.
+- Source Quality and Feed Accountability downloadable report.
+- Companion editable PowerPoint briefing deck in `docs/briefing`.
+
+Changed:
+
+- Lease & Agreement Governance now distinguishes public agreement-access signals from internal authoritative agreement records.
+- Cockpit and Data Strategy Roadmap now surface source quality, feed accountability, and leadership drilldowns.
+- README now documents the public contract-data access boundary and the implemented v1.5 additions.
+
+Removed:
+
+- Recommended next-step bullets that are now implemented in the prototype.
 
 ### v1.4 - Template intake, metadata provenance, and predictive refresh layer
 
@@ -260,8 +297,8 @@ Removed:
 
 ## Recommended Next Steps
 
-- Replace illustrative lease and agreement records with real commercial agreement data if access is available.
-- Connect parking, concessions, ground transportation, cargo, gate, schedule, and PNE asset feeds.
-- Add a source-quality scoring workflow with accountable data owners.
-- Add portfolio drilldowns for PHL and PNE leadership audiences.
-- Add a companion executive briefing deck that explains the dashboard story.
+- Replace public agreement-access placeholders with authoritative internal lease/agreement records once approved access is available.
+- Connect the feed blueprint to approved production ETL/data warehouse sources.
+- Replace illustrative source-quality scoring with governed validation rules and signed-off data-owner thresholds.
+- Add authentication, role-based access, and persistent uploaded-template storage if this moves beyond a static prototype.
+- Add automated tests for report serialization, template parsing, and source-quality scoring once production rules are defined.
